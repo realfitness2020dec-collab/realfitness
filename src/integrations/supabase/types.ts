@@ -14,16 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attendance: {
+        Row: {
+          check_in_time: string | null
+          created_at: string | null
+          id: string
+          member_id: string
+          qr_code_used: string | null
+        }
+        Insert: {
+          check_in_time?: string | null
+          created_at?: string | null
+          id?: string
+          member_id: string
+          qr_code_used?: string | null
+        }
+        Update: {
+          check_in_time?: string | null
+          created_at?: string | null
+          id?: string
+          member_id?: string
+          qr_code_used?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gym_packages: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration_months: number
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration_months: number
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration_months?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      gym_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      members: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string
+          height: number | null
+          id: string
+          is_active: boolean | null
+          member_id: string
+          package_end_date: string | null
+          package_id: string | null
+          package_start_date: string | null
+          phone: string
+          photo_url: string | null
+          updated_at: string | null
+          user_id: string | null
+          weight: number | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          height?: number | null
+          id?: string
+          is_active?: boolean | null
+          member_id: string
+          package_end_date?: string | null
+          package_id?: string | null
+          package_start_date?: string | null
+          phone: string
+          photo_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          weight?: number | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          height?: number | null
+          id?: string
+          is_active?: boolean | null
+          member_id?: string
+          package_end_date?: string | null
+          package_id?: string | null
+          package_start_date?: string | null
+          phone?: string
+          photo_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "gym_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_member_id: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +322,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "member"],
+    },
   },
 } as const
