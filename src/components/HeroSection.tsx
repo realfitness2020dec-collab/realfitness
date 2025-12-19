@@ -79,13 +79,15 @@ const HeroSection = () => {
           >
             Member Login
           </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="border-primary px-8 py-6 text-lg font-bold text-primary transition-all hover:scale-105 hover:bg-primary hover:text-primary-foreground"
-          >
-            Admin Login
-          </Button>
+          <a href="/admin">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-primary px-8 py-6 text-lg font-bold text-primary transition-all hover:scale-105 hover:bg-primary hover:text-primary-foreground"
+            >
+              Admin Login
+            </Button>
+          </a>
         </div>
 
         {/* Stats */}
