@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Package, Calendar, Scale, Ruler } from "lucide-react";
+import { LogOut, User, Package, Calendar, Scale, Ruler, QrCode, Home } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Member = Tables<"members">;
+type Attendance = Tables<"attendance">;
 
 const MemberPortal = () => {
   const navigate = useNavigate();
   const [member, setMember] = useState<Member | null>(null);
+  const [attendance, setAttendance] = useState<Attendance[]>([]);
 
   useEffect(() => {
     const storedMember = sessionStorage.getItem("member");
@@ -18,8 +22,20 @@ const MemberPortal = () => {
       navigate("/member");
       return;
     }
-    setMember(JSON.parse(storedMember));
+    const memberData = JSON.parse(storedMember);
+    setMember(memberData);
+    fetchAttendance(memberData.id);
   }, [navigate]);
+
+  const fetchAttendance = async (memberId: string) => {
+    const { data } = await supabase
+      .from("attendance")
+      .select("*")
+      .eq("member_id", memberId)
+      .order("check_in_time", { ascending: false })
+      .limit(10);
+    if (data) setAttendance(data);
+  };
 
   const handleLogout = () => {
     sessionStorage.removeItem("member");
@@ -46,10 +62,16 @@ const MemberPortal = () => {
               <p className="text-sm text-muted-foreground">Member Portal</p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
+              <Home className="h-4 w-4" />
+              Home
+            </Button>
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -185,6 +207,44 @@ const MemberPortal = () => {
                 </span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* QR Code for Check-In */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-primary" />
+              Your Check-In QR Code
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <div className="bg-white p-4 rounded-lg">
+              <QRCodeSVG value={member.member_id} size={200} level="H" />
+            </div>
+            <p className="text-muted-foreground mt-4 text-center">Show this QR code at the gym entrance to check in</p>
+            <p className="text-primary font-mono text-xl font-bold mt-2">{member.member_id}</p>
+          </CardContent>
+        </Card>
+
+        {/* Attendance History */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground">Recent Attendance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {attendance.length > 0 ? (
+              <div className="space-y-2">
+                {attendance.map((record) => (
+                  <div key={record.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <span className="text-foreground">{new Date(record.check_in_time || "").toLocaleDateString()}</span>
+                    <span className="text-muted-foreground">{new Date(record.check_in_time || "").toLocaleTimeString()}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">No attendance records yet</p>
+            )}
           </CardContent>
         </Card>
       </main>
