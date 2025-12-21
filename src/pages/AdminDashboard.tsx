@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Users, UserPlus, LogOut, Package, Calendar } from "lucide-react";
+import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2 } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -25,9 +27,16 @@ const AdminDashboard = () => {
   const [submitting, setSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "",
+  });
+
+  const [editFormData, setEditFormData] = useState({
+    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", is_active: true,
   });
 
   useEffect(() => {
@@ -52,6 +61,16 @@ const AdminDashboard = () => {
       setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setEditPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -91,6 +110,79 @@ const AdminDashboard = () => {
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to create member");
     } finally { setSubmitting(false); }
+  };
+
+  const openEditDialog = (member: Member) => {
+    setEditingMember(member);
+    setEditFormData({
+      full_name: member.full_name,
+      phone: member.phone,
+      email: member.email || "",
+      address: member.address || "",
+      weight: member.weight?.toString() || "",
+      height: member.height?.toString() || "",
+      package_id: member.package_id || "",
+      is_active: member.is_active ?? true,
+    });
+    setEditPhotoPreview(member.photo_url);
+    setEditPhotoFile(null);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMember) return;
+    setSubmitting(true);
+    try {
+      let photoUrl = editingMember.photo_url;
+      if (editPhotoFile) {
+        const fileName = `${Date.now()}.${editPhotoFile.name.split('.').pop()}`;
+        const { error: uploadError } = await supabase.storage.from("member-photos").upload(fileName, editPhotoFile);
+        if (uploadError) throw uploadError;
+        photoUrl = supabase.storage.from("member-photos").getPublicUrl(fileName).data.publicUrl;
+      }
+
+      const selectedPackage = packages.find(p => p.id === editFormData.package_id);
+      const updateData: Record<string, unknown> = {
+        full_name: editFormData.full_name,
+        phone: editFormData.phone,
+        email: editFormData.email || null,
+        address: editFormData.address || null,
+        weight: editFormData.weight ? parseFloat(editFormData.weight) : null,
+        height: editFormData.height ? parseFloat(editFormData.height) : null,
+        photo_url: photoUrl,
+        is_active: editFormData.is_active,
+      };
+
+      if (editFormData.package_id !== editingMember.package_id) {
+        updateData.package_id = editFormData.package_id || null;
+        if (editFormData.package_id && selectedPackage) {
+          const startDate = new Date();
+          const endDate = new Date();
+          endDate.setMonth(endDate.getMonth() + selectedPackage.duration_months);
+          updateData.package_start_date = startDate.toISOString().split('T')[0];
+          updateData.package_end_date = endDate.toISOString().split('T')[0];
+        }
+      }
+
+      const { error } = await supabase.from("members").update(updateData).eq("id", editingMember.id);
+      if (error) throw error;
+      toast.success("Member updated successfully!");
+      setEditingMember(null);
+      fetchMembers();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to update member");
+    } finally { setSubmitting(false); }
+  };
+
+  const handleDeleteMember = async (member: Member) => {
+    try {
+      const { error } = await supabase.from("members").delete().eq("id", member.id);
+      if (error) throw error;
+      toast.success(`Member ${member.member_id} deleted successfully!`);
+      fetchMembers();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete member");
+    }
   };
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
@@ -138,9 +230,65 @@ const AdminDashboard = () => {
           </Card>
         )}
         <Card className="bg-card border-border"><CardHeader><CardTitle className="text-foreground">Members List</CardTitle></CardHeader>
-          <CardContent><div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b border-border"><th className="text-left py-3 px-4 text-muted-foreground">Photo</th><th className="text-left py-3 px-4 text-muted-foreground">Member ID</th><th className="text-left py-3 px-4 text-muted-foreground">Name</th><th className="text-left py-3 px-4 text-muted-foreground">Phone</th><th className="text-left py-3 px-4 text-muted-foreground">Status</th></tr></thead>
-            <tbody>{members.map((m) => <tr key={m.id} className="border-b border-border hover:bg-muted/50"><td className="py-3 px-4">{m.photo_url ? <img src={m.photo_url} alt={m.full_name} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"><Users className="h-5 w-5 text-muted-foreground" /></div>}</td><td className="py-3 px-4 text-primary font-mono font-bold">{m.member_id}</td><td className="py-3 px-4 text-foreground">{m.full_name}</td><td className="py-3 px-4 text-foreground">{m.phone}</td><td className="py-3 px-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${m.is_active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{m.is_active ? "Active" : "Inactive"}</span></td></tr>)}
-              {members.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">No members found</td></tr>}</tbody></table></div></CardContent>
+          <CardContent><div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b border-border"><th className="text-left py-3 px-4 text-muted-foreground">Photo</th><th className="text-left py-3 px-4 text-muted-foreground">Member ID</th><th className="text-left py-3 px-4 text-muted-foreground">Name</th><th className="text-left py-3 px-4 text-muted-foreground">Phone</th><th className="text-left py-3 px-4 text-muted-foreground">Status</th><th className="text-left py-3 px-4 text-muted-foreground">Actions</th></tr></thead>
+            <tbody>{members.map((m) => (
+              <tr key={m.id} className="border-b border-border hover:bg-muted/50">
+                <td className="py-3 px-4">{m.photo_url ? <img src={m.photo_url} alt={m.full_name} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"><Users className="h-5 w-5 text-muted-foreground" /></div>}</td>
+                <td className="py-3 px-4 text-primary font-mono font-bold">{m.member_id}</td>
+                <td className="py-3 px-4 text-foreground">{m.full_name}</td>
+                <td className="py-3 px-4 text-foreground">{m.phone}</td>
+                <td className="py-3 px-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${m.is_active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{m.is_active ? "Active" : "Inactive"}</span></td>
+                <td className="py-3 px-4">
+                  <div className="flex gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => openEditDialog(m)}><Pencil className="h-4 w-4" /></Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader><DialogTitle className="text-foreground">Edit Member - {editingMember?.member_id}</DialogTitle></DialogHeader>
+                        <form onSubmit={handleEditSubmit} className="space-y-4">
+                          <div className="flex flex-col items-center gap-4">
+                            {editPhotoPreview ? <img src={editPhotoPreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-4 border-primary" /> : <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-4 border-border"><Users className="h-8 w-8 text-muted-foreground" /></div>}
+                            <Label htmlFor="editPhoto" className="cursor-pointer text-primary hover:text-primary/80 text-sm">Change Photo</Label>
+                            <Input id="editPhoto" type="file" accept="image/*" onChange={handleEditPhotoChange} className="hidden" />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label className="text-foreground">Full Name *</Label><Input value={editFormData.full_name} onChange={(e) => setEditFormData({...editFormData, full_name: e.target.value})} required className="bg-background border-border text-foreground" /></div>
+                            <div className="space-y-2"><Label className="text-foreground">Phone *</Label><Input value={editFormData.phone} onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})} required className="bg-background border-border text-foreground" /></div>
+                            <div className="space-y-2"><Label className="text-foreground">Email</Label><Input type="email" value={editFormData.email} onChange={(e) => setEditFormData({...editFormData, email: e.target.value})} className="bg-background border-border text-foreground" /></div>
+                            <div className="space-y-2"><Label className="text-foreground">Package</Label><Select value={editFormData.package_id} onValueChange={(v) => setEditFormData({...editFormData, package_id: v})}><SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Choose package" /></SelectTrigger><SelectContent className="bg-popover border-border">{packages.map((pkg) => <SelectItem key={pkg.id} value={pkg.id}>{pkg.name} - ₹{pkg.price}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="space-y-2"><Label className="text-foreground">Weight (kg)</Label><Input type="number" value={editFormData.weight} onChange={(e) => setEditFormData({...editFormData, weight: e.target.value})} className="bg-background border-border text-foreground" /></div>
+                            <div className="space-y-2"><Label className="text-foreground">Height (cm)</Label><Input type="number" value={editFormData.height} onChange={(e) => setEditFormData({...editFormData, height: e.target.value})} className="bg-background border-border text-foreground" /></div>
+                          </div>
+                          <div className="space-y-2"><Label className="text-foreground">Address</Label><Textarea value={editFormData.address} onChange={(e) => setEditFormData({...editFormData, address: e.target.value})} className="bg-background border-border text-foreground" /></div>
+                          <div className="flex items-center gap-2">
+                            <input type="checkbox" id="is_active" checked={editFormData.is_active} onChange={(e) => setEditFormData({...editFormData, is_active: e.target.checked})} className="rounded" />
+                            <Label htmlFor="is_active" className="text-foreground">Active Member</Label>
+                          </div>
+                          <div className="flex gap-4 justify-end"><Button type="submit" disabled={submitting} className="bg-primary hover:bg-primary/90 text-primary-foreground">{submitting ? "Saving..." : "Save Changes"}</Button></div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card border-border">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-foreground">Delete Member?</AlertDialogTitle>
+                          <AlertDialogDescription>This will permanently delete {m.full_name} ({m.member_id}). This action cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteMember(m)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </td>
+              </tr>
+            ))}
+              {members.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No members found</td></tr>}</tbody></table></div></CardContent>
         </Card>
       </main>
     </div>
