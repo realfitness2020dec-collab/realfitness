@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2 } from "lucide-react";
+import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -197,7 +197,11 @@ const AdminDashboard = () => {
             <img src={realFitnessLogo} alt="Real Fitness" className="h-16 w-16 object-contain" />
             <div><h1 className="text-xl font-bold text-foreground">REAL FITNESS</h1><p className="text-sm text-muted-foreground">Admin Dashboard</p></div>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="gap-2"><LogOut className="h-4 w-4" />Sign Out</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/checkin")} className="gap-2"><QrCode className="h-4 w-4" />Check-In</Button>
+            <Button variant="outline" onClick={() => navigate("/")} className="gap-2"><Home className="h-4 w-4" />Home</Button>
+            <Button variant="outline" onClick={handleSignOut} className="gap-2"><LogOut className="h-4 w-4" />Sign Out</Button>
+          </div>
         </div>
       </header>
       <main className="container mx-auto p-6 space-y-6">

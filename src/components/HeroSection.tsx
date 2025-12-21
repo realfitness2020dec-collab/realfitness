@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Users, Trophy, Clock, Dumbbell, Shield, User } from "lucide-react";
+import { Users, Trophy, Clock, Dumbbell, Shield, User, QrCode } from "lucide-react";
 import gymHero from "@/assets/gym-hero.jpg";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 
@@ -36,6 +36,7 @@ const HeroSection = () => {
         <div className="flex flex-col gap-4 sm:flex-row">
           <Button size="lg" onClick={() => navigate("/admin")} className="gap-2 bg-primary px-8 py-6 text-lg font-bold text-primary-foreground hover:bg-primary/90"><Shield className="h-5 w-5" />Admin Login</Button>
           <Button size="lg" variant="outline" onClick={() => navigate("/member")} className="gap-2 border-primary px-8 py-6 text-lg font-bold text-primary hover:bg-primary hover:text-primary-foreground"><User className="h-5 w-5" />Member Login</Button>
+          <Button size="lg" variant="outline" onClick={() => navigate("/checkin")} className="gap-2 border-primary px-8 py-6 text-lg font-bold text-primary hover:bg-primary hover:text-primary-foreground"><QrCode className="h-5 w-5" />Check-In</Button>
         </div>
         <div className="mt-16 grid grid-cols-2 gap-8 md:grid-cols-4">
           {stats.map((stat, i) => <div key={i} className="group flex flex-col items-center rounded-lg border border-border/50 bg-card/50 p-6 backdrop-blur-sm hover:border-primary"><stat.icon className="mb-2 h-8 w-8 text-primary" /><span className="font-display text-3xl font-bold text-foreground">{stat.value}</span><span className="text-sm text-muted-foreground">{stat.label}</span></div>)}
