@@ -1,22 +1,23 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Home, QrCode, CheckCircle, XCircle } from "lucide-react";
+import { Home, QrCode, CheckCircle, XCircle, Camera, Keyboard } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
+import QRScanner from "@/components/QRScanner";
 
 const CheckIn = () => {
   const navigate = useNavigate();
   const [memberId, setMemberId] = useState("");
   const [checking, setChecking] = useState(false);
+  const [scanMode, setScanMode] = useState<"scanner" | "manual">("scanner");
   const [result, setResult] = useState<{ success: boolean; member?: { full_name: string; member_id: string; photo_url: string | null } } | null>(null);
 
-  const handleCheckIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!memberId.trim()) return;
+  const processCheckIn = useCallback(async (id: string) => {
+    if (checking) return;
     
     setChecking(true);
     setResult(null);
@@ -25,7 +26,7 @@ const CheckIn = () => {
       const { data: member, error: memberError } = await supabase
         .from("members")
         .select("id, full_name, member_id, photo_url, is_active, package_end_date")
-        .eq("member_id", memberId.toUpperCase())
+        .eq("member_id", id.toUpperCase())
         .maybeSingle();
 
       if (memberError) throw memberError;
@@ -33,25 +34,28 @@ const CheckIn = () => {
       if (!member) {
         setResult({ success: false });
         toast.error("Member not found!");
+        setTimeout(() => setResult(null), 3000);
         return;
       }
 
       if (!member.is_active) {
         setResult({ success: false });
         toast.error("Membership is inactive!");
+        setTimeout(() => setResult(null), 3000);
         return;
       }
 
       if (member.package_end_date && new Date(member.package_end_date) < new Date()) {
         setResult({ success: false });
         toast.error("Membership has expired!");
+        setTimeout(() => setResult(null), 3000);
         return;
       }
 
       // Record attendance
       const { error: attendanceError } = await supabase.from("attendance").insert({
         member_id: member.id,
-        qr_code_used: memberId.toUpperCase(),
+        qr_code_used: id.toUpperCase(),
       });
 
       if (attendanceError) throw attendanceError;
@@ -68,10 +72,23 @@ const CheckIn = () => {
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Check-in failed");
       setResult({ success: false });
+      setTimeout(() => setResult(null), 3000);
     } finally {
       setChecking(false);
     }
+  }, [checking]);
+
+  const handleManualCheckIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memberId.trim()) return;
+    await processCheckIn(memberId);
   };
+
+  const handleQRScan = useCallback((scannedId: string) => {
+    if (!checking && !result) {
+      processCheckIn(scannedId);
+    }
+  }, [checking, result, processCheckIn]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -92,16 +109,39 @@ const CheckIn = () => {
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">
-        <Card className="bg-card border-border w-full max-w-md">
+        <Card className="bg-card border-border w-full max-w-lg">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <img src={realFitnessLogo} alt="Real Fitness" className="h-24 w-24 object-contain" />
+              <img src={realFitnessLogo} alt="Real Fitness" className="h-20 w-20 object-contain" />
             </div>
             <CardTitle className="text-2xl text-foreground flex items-center justify-center gap-2">
               <QrCode className="h-6 w-6 text-primary" />
               Member Check-In
             </CardTitle>
+            
+            {/* Mode Toggle */}
+            <div className="flex justify-center gap-2 mt-4">
+              <Button
+                variant={scanMode === "scanner" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setScanMode("scanner")}
+                className="gap-2"
+              >
+                <Camera className="h-4 w-4" />
+                Scan QR
+              </Button>
+              <Button
+                variant={scanMode === "manual" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setScanMode("manual")}
+                className="gap-2"
+              >
+                <Keyboard className="h-4 w-4" />
+                Manual Entry
+              </Button>
+            </div>
           </CardHeader>
+          
           <CardContent className="space-y-6">
             {result ? (
               <div className={`text-center p-8 rounded-lg ${result.success ? "bg-green-500/10" : "bg-red-500/10"}`}>
@@ -109,11 +149,11 @@ const CheckIn = () => {
                   <>
                     <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                     {result.member?.photo_url && (
-                      <img src={result.member.photo_url} alt={result.member.full_name} className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-4 border-green-500" />
+                      <img src={result.member.photo_url} alt={result.member.full_name} className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-green-500" />
                     )}
                     <h3 className="text-xl font-bold text-green-400">Check-In Successful!</h3>
-                    <p className="text-foreground font-medium mt-2">{result.member?.full_name}</p>
-                    <p className="text-primary font-mono">{result.member?.member_id}</p>
+                    <p className="text-foreground font-medium mt-2 text-lg">{result.member?.full_name}</p>
+                    <p className="text-primary font-mono text-xl">{result.member?.member_id}</p>
                   </>
                 ) : (
                   <>
@@ -123,8 +163,18 @@ const CheckIn = () => {
                   </>
                 )}
               </div>
+            ) : scanMode === "scanner" ? (
+              <div className="space-y-4">
+                <QRScanner 
+                  onScan={handleQRScan}
+                  onError={(error) => toast.error(error)}
+                />
+                <p className="text-center text-muted-foreground text-sm">
+                  Point camera at member's QR code
+                </p>
+              </div>
             ) : (
-              <form onSubmit={handleCheckIn} className="space-y-4">
+              <form onSubmit={handleManualCheckIn} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-foreground font-medium">Enter Member ID</label>
                   <Input
