@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3 } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import AttendanceAnalytics from "@/components/AttendanceAnalytics";
+import PackageManagement from "@/components/PackageManagement";
 import type { Tables } from "@/integrations/supabase/types";
 
 type GymPackage = Tables<"gym_packages">;
@@ -210,14 +211,18 @@ const AdminDashboard = () => {
         <div className="flex justify-center mb-8"><img src={realFitnessLogo} alt="Real Fitness Logo" className="h-48 w-48 object-contain" /></div>
         
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+          <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto">
             <TabsTrigger value="members" className="gap-2">
               <Users className="h-4 w-4" />
               Members
             </TabsTrigger>
+            <TabsTrigger value="packages" className="gap-2">
+              <Package className="h-4 w-4" />
+              Packages
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
-              Attendance Reports
+              Reports
             </TabsTrigger>
           </TabsList>
 
@@ -310,6 +315,10 @@ const AdminDashboard = () => {
                 ))}
                   {members.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No members found</td></tr>}</tbody></table></div></CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="packages">
+            <PackageManagement />
           </TabsContent>
 
           <TabsContent value="analytics">
