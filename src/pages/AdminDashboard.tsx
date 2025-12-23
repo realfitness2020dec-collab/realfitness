@@ -12,10 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3 } from "lucide-react";
+import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3, AlertTriangle } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import AttendanceAnalytics from "@/components/AttendanceAnalytics";
 import PackageManagement from "@/components/PackageManagement";
+import ExpiryNotifications from "@/components/ExpiryNotifications";
 import type { Tables } from "@/integrations/supabase/types";
 
 type GymPackage = Tables<"gym_packages">;
@@ -211,7 +212,7 @@ const AdminDashboard = () => {
         <div className="flex justify-center mb-8"><img src={realFitnessLogo} alt="Real Fitness Logo" className="h-48 w-48 object-contain" /></div>
         
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto">
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto">
             <TabsTrigger value="members" className="gap-2">
               <Users className="h-4 w-4" />
               Members
@@ -219,6 +220,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="packages" className="gap-2">
               <Package className="h-4 w-4" />
               Packages
+            </TabsTrigger>
+            <TabsTrigger value="expiry" className="gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Expiry
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -319,6 +324,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="packages">
             <PackageManagement />
+          </TabsContent>
+
+          <TabsContent value="expiry">
+            <ExpiryNotifications />
           </TabsContent>
 
           <TabsContent value="analytics">
