@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { supabase } from "@/integrations/supabase/client";
+import { attendanceService } from "@/integrations/firebase/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, User, Package, Calendar, Scale, Ruler, QrCode, Home } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
-import type { Tables } from "@/integrations/supabase/types";
-
-type Member = Tables<"members">;
-type Attendance = Tables<"attendance">;
+import type { Member, Attendance } from "@/integrations/firebase/types";
 
 const MemberPortal = () => {
   const navigate = useNavigate();
@@ -28,13 +25,8 @@ const MemberPortal = () => {
   }, [navigate]);
 
   const fetchAttendance = async (memberId: string) => {
-    const { data } = await supabase
-      .from("attendance")
-      .select("*")
-      .eq("member_id", memberId)
-      .order("check_in_time", { ascending: false })
-      .limit(10);
-    if (data) setAttendance(data);
+    const data = await attendanceService.getByMemberId(memberId, 10);
+    setAttendance(data);
   };
 
   const handleLogout = () => {

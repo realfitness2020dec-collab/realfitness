@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { membersService } from "@/integrations/firebase/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,27 +19,21 @@ const MemberLogin = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from("members")
-        .select("*")
-        .eq("member_id", memberId.toUpperCase())
-        .maybeSingle();
+      const member = await membersService.getByMemberId(memberId);
 
-      if (error) throw error;
-
-      if (!data) {
+      if (!member) {
         toast.error("Member ID not found. Please check and try again.");
         return;
       }
 
-      if (!data.is_active) {
+      if (!member.is_active) {
         toast.error("Your membership is inactive. Please contact the gym.");
         return;
       }
 
       // Store member info in session storage for member portal
-      sessionStorage.setItem("member", JSON.stringify(data));
-      toast.success(`Welcome back, ${data.full_name}!`);
+      sessionStorage.setItem("member", JSON.stringify(member));
+      toast.success(`Welcome back, ${member.full_name}!`);
       navigate("/member/portal");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Login failed";

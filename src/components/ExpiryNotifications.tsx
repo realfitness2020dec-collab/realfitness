@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { membersService, packagesService } from "@/integrations/firebase/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Clock, Phone, Mail } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Member, GymPackage } from "@/integrations/firebase/types";
 
-type Member = Tables<"members"> & {
-  gym_packages?: { name: string } | null;
+type MemberWithPackage = Member & {
+  gym_packages?: GymPackage | null;
 };
 
 const ExpiryNotifications = () => {
-  const [expiringMembers, setExpiringMembers] = useState<Member[]>([]);
+  const [expiringMembers, setExpiringMembers] = useState<MemberWithPackage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,21 +19,18 @@ const ExpiryNotifications = () => {
 
   const fetchExpiringMembers = async () => {
     try {
-      const today = new Date();
-      const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(today.getDate() + 7);
+      const [members, packages] = await Promise.all([
+        membersService.getExpiringMembers(7),
+        packagesService.getAll(),
+      ]);
 
-      const { data, error } = await supabase
-        .from("members")
-        .select("*, gym_packages(name)")
-        .eq("is_active", true)
-        .not("package_end_date", "is", null)
-        .gte("package_end_date", today.toISOString().split("T")[0])
-        .lte("package_end_date", sevenDaysFromNow.toISOString().split("T")[0])
-        .order("package_end_date", { ascending: true });
+      // Attach package info to members
+      const membersWithPackages = members.map(member => ({
+        ...member,
+        gym_packages: packages.find(p => p.id === member.package_id) || null,
+      }));
 
-      if (error) throw error;
-      setExpiringMembers((data as Member[]) || []);
+      setExpiringMembers(membersWithPackages);
     } catch (error) {
       console.error("Failed to fetch expiring members:", error);
     } finally {

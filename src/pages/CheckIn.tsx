@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { membersService, attendanceService } from "@/integrations/firebase/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,13 +38,7 @@ const CheckIn = () => {
     setResult(null);
     
     try {
-      const { data: member, error: memberError } = await supabase
-        .from("members")
-        .select("id, full_name, member_id, photo_url, is_active, package_end_date")
-        .eq("member_id", id.toUpperCase())
-        .maybeSingle();
-
-      if (memberError) throw memberError;
+      const member = await membersService.getByMemberId(id);
       
       if (!member) {
         setResult({ success: false });
@@ -68,12 +62,10 @@ const CheckIn = () => {
       }
 
       // Record attendance
-      const { error: attendanceError } = await supabase.from("attendance").insert({
+      await attendanceService.create({
         member_id: member.id,
         qr_code_used: id.toUpperCase(),
       });
-
-      if (attendanceError) throw attendanceError;
 
       setResult({ 
         success: true, 
