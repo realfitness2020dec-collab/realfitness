@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { packagesService } from "@/integrations/firebase/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Package, Plus, Pencil, Trash2, IndianRupee, Clock } from "lucide-react";
-import type { Tables } from "@/integrations/supabase/types";
-
-type GymPackage = Tables<"gym_packages">;
+import type { GymPackage } from "@/integrations/firebase/types";
 
 const PackageManagement = () => {
   const [packages, setPackages] = useState<GymPackage[]>([]);
@@ -35,12 +33,8 @@ const PackageManagement = () => {
 
   const fetchPackages = async () => {
     try {
-      const { data, error } = await supabase
-        .from("gym_packages")
-        .select("*")
-        .order("price", { ascending: true });
-      if (error) throw error;
-      setPackages(data || []);
+      const data = await packagesService.getAll();
+      setPackages(data);
     } catch (error) {
       console.error("Error fetching packages:", error);
     } finally {
@@ -67,7 +61,7 @@ const PackageManagement = () => {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("gym_packages").insert({
+      await packagesService.create({
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         price: parseFloat(formData.price),
@@ -75,7 +69,6 @@ const PackageManagement = () => {
         is_active: formData.is_active,
       });
 
-      if (error) throw error;
       toast.success("Package created successfully!");
       resetForm();
       setShowAddForm(false);
@@ -104,18 +97,14 @@ const PackageManagement = () => {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("gym_packages")
-        .update({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          price: parseFloat(formData.price),
-          duration_months: parseInt(formData.duration_months),
-          is_active: formData.is_active,
-        })
-        .eq("id", editingPackage.id);
+      await packagesService.update(editingPackage.id, {
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        price: parseFloat(formData.price),
+        duration_months: parseInt(formData.duration_months),
+        is_active: formData.is_active,
+      });
 
-      if (error) throw error;
       toast.success("Package updated successfully!");
       setEditingPackage(null);
       resetForm();
@@ -129,8 +118,7 @@ const PackageManagement = () => {
 
   const handleDeletePackage = async (pkg: GymPackage) => {
     try {
-      const { error } = await supabase.from("gym_packages").delete().eq("id", pkg.id);
-      if (error) throw error;
+      await packagesService.delete(pkg.id);
       toast.success(`Package "${pkg.name}" deleted successfully!`);
       fetchPackages();
     } catch (error: unknown) {
@@ -408,7 +396,10 @@ const PackageManagement = () => {
               ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-8">No packages found. Create your first package!</p>
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No packages created yet</p>
+            </div>
           )}
         </CardContent>
       </Card>

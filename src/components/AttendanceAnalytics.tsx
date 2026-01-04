@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { attendanceService, membersService } from "@/integrations/firebase/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { CalendarDays, TrendingUp, Clock, Users } from "lucide-react";
+import type { Attendance, Member } from "@/integrations/firebase/types";
 
-interface AttendanceRecord {
-  id: string;
-  member_id: string;
-  check_in_time: string;
-  members?: { full_name: string; member_id: string };
+interface AttendanceWithMember extends Attendance {
+  member?: Member | null;
 }
 
 interface DailyData {
@@ -25,7 +23,7 @@ const AttendanceAnalytics = () => {
   const [todayCount, setTodayCount] = useState(0);
   const [weekCount, setWeekCount] = useState(0);
   const [monthCount, setMonthCount] = useState(0);
-  const [recentAttendance, setRecentAttendance] = useState<AttendanceRecord[]>([]);
+  const [recentAttendance, setRecentAttendance] = useState<AttendanceWithMember[]>([]);
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,78 +35,62 @@ const AttendanceAnalytics = () => {
   const fetchAnalytics = async () => {
     try {
       const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      // Fetch today's count
-      const { count: today } = await supabase
-        .from("attendance")
-        .select("*", { count: "exact", head: true })
-        .gte("check_in_time", todayStart);
-      setTodayCount(today || 0);
+      // Fetch all data
+      const [allAttendance, allMembers] = await Promise.all([
+        attendanceService.getAll(),
+        membersService.getAll(),
+      ]);
 
-      // Fetch week's count
-      const { count: week } = await supabase
-        .from("attendance")
-        .select("*", { count: "exact", head: true })
-        .gte("check_in_time", weekStart);
-      setWeekCount(week || 0);
+      // Calculate counts
+      setTodayCount(allAttendance.filter(a => new Date(a.check_in_time) >= todayStart).length);
+      setWeekCount(allAttendance.filter(a => new Date(a.check_in_time) >= weekStart).length);
+      setMonthCount(allAttendance.filter(a => new Date(a.check_in_time) >= monthStart).length);
 
-      // Fetch month's count
-      const { count: month } = await supabase
-        .from("attendance")
-        .select("*", { count: "exact", head: true })
-        .gte("check_in_time", monthStart);
-      setMonthCount(month || 0);
+      // Get recent attendance with member details
+      const recent = allAttendance.slice(0, 10).map(record => ({
+        ...record,
+        member: allMembers.find(m => m.id === record.member_id) || null,
+      }));
+      setRecentAttendance(recent);
 
-      // Fetch recent attendance with member details
-      const { data: recent } = await supabase
-        .from("attendance")
-        .select("id, member_id, check_in_time, members(full_name, member_id)")
-        .order("check_in_time", { ascending: false })
-        .limit(10);
-      setRecentAttendance((recent as AttendanceRecord[]) || []);
-
-      // Fetch last 7 days data for chart
-      const { data: weekData } = await supabase
-        .from("attendance")
-        .select("check_in_time")
-        .gte("check_in_time", weekStart);
-
-      if (weekData) {
-        const dailyCounts: Record<string, number> = {};
-        const hourlyCounts: Record<number, number> = {};
+      // Process weekly data for charts
+      const weekData = allAttendance.filter(a => new Date(a.check_in_time) >= weekStart);
+      
+      const dailyCounts: Record<string, number> = {};
+      const hourlyCounts: Record<number, number> = {};
+      
+      weekData.forEach((record) => {
+        const date = new Date(record.check_in_time);
+        const dateKey = date.toLocaleDateString("en-US", { weekday: "short" });
+        dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
         
-        weekData.forEach((record) => {
-          const date = new Date(record.check_in_time);
-          const dateKey = date.toLocaleDateString("en-US", { weekday: "short" });
-          dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
-          
-          const hour = date.getHours();
-          hourlyCounts[hour] = (hourlyCounts[hour] || 0) + 1;
-        });
+        const hour = date.getHours();
+        hourlyCounts[hour] = (hourlyCounts[hour] || 0) + 1;
+      });
 
-        // Generate last 7 days labels
-        const days: DailyData[] = [];
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          const label = d.toLocaleDateString("en-US", { weekday: "short" });
-          days.push({ date: label, count: dailyCounts[label] || 0 });
-        }
-        setDailyData(days);
-
-        // Generate hourly data
-        const hours: HourlyData[] = [];
-        for (let i = 5; i <= 22; i++) {
-          hours.push({ 
-            hour: `${i.toString().padStart(2, "0")}:00`, 
-            count: hourlyCounts[i] || 0 
-          });
-        }
-        setHourlyData(hours);
+      // Generate last 7 days labels
+      const days: DailyData[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const label = d.toLocaleDateString("en-US", { weekday: "short" });
+        days.push({ date: label, count: dailyCounts[label] || 0 });
       }
+      setDailyData(days);
+
+      // Generate hourly data
+      const hours: HourlyData[] = [];
+      for (let i = 5; i <= 22; i++) {
+        hours.push({ 
+          hour: `${i.toString().padStart(2, "0")}:00`, 
+          count: hourlyCounts[i] || 0 
+        });
+      }
+      setHourlyData(hours);
     } catch (error) {
       console.error("Error fetching analytics:", error);
     } finally {
@@ -244,10 +226,10 @@ const AttendanceAnalytics = () => {
                   {recentAttendance.map((record) => (
                     <tr key={record.id} className="border-b border-border hover:bg-muted/50">
                       <td className="py-3 px-4 text-primary font-mono font-bold">
-                        {record.members?.member_id || "-"}
+                        {record.member?.member_id || "-"}
                       </td>
                       <td className="py-3 px-4 text-foreground">
-                        {record.members?.full_name || "-"}
+                        {record.member?.full_name || "-"}
                       </td>
                       <td className="py-3 px-4 text-foreground">
                         {new Date(record.check_in_time).toLocaleDateString()}

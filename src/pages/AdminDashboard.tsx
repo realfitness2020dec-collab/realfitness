@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { membersService, packagesService } from "@/integrations/firebase/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,10 +18,7 @@ import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import AttendanceAnalytics from "@/components/AttendanceAnalytics";
 import PackageManagement from "@/components/PackageManagement";
 import ExpiryNotifications from "@/components/ExpiryNotifications";
-import type { Tables } from "@/integrations/supabase/types";
-
-type GymPackage = Tables<"gym_packages">;
-type Member = Tables<"members">;
+import type { GymPackage, Member } from "@/integrations/firebase/types";
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -50,13 +48,19 @@ const AdminDashboard = () => {
   useEffect(() => { fetchPackages(); fetchMembers(); }, []);
 
   const fetchPackages = async () => {
-    const { data } = await supabase.from("gym_packages").select("*").eq("is_active", true);
-    if (data) setPackages(data);
+    const data = await packagesService.getActive();
+    setPackages(data);
   };
 
   const fetchMembers = async () => {
-    const { data } = await supabase.from("members").select("*, gym_packages(name)").order("created_at", { ascending: false });
-    if (data) setMembers(data as Member[]);
+    const data = await membersService.getAll();
+    // Attach package info
+    const allPackages = await packagesService.getAll();
+    const membersWithPackages = data.map(m => ({
+      ...m,
+      gym_packages: allPackages.find(p => p.id === m.package_id) || null,
+    }));
+    setMembers(membersWithPackages);
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,36 +83,45 @@ const AdminDashboard = () => {
     }
   };
 
+  const uploadPhoto = async (file: File): Promise<string | null> => {
+    const fileName = `${Date.now()}.${file.name.split('.').pop()}`;
+    const { error: uploadError } = await supabase.storage.from("member-photos").upload(fileName, file);
+    if (uploadError) throw uploadError;
+    return supabase.storage.from("member-photos").getPublicUrl(fileName).data.publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       let photoUrl = null;
       if (photoFile) {
-        const fileName = `${Date.now()}.${photoFile.name.split('.').pop()}`;
-        const { error: uploadError } = await supabase.storage.from("member-photos").upload(fileName, photoFile);
-        if (uploadError) throw uploadError;
-        photoUrl = supabase.storage.from("member-photos").getPublicUrl(fileName).data.publicUrl;
+        photoUrl = await uploadPhoto(photoFile);
       }
-      const { data: memberIdData, error: memberIdError } = await supabase.rpc("generate_member_id");
-      if (memberIdError) throw memberIdError;
+      
+      const memberId = await membersService.generateMemberId();
       const selectedPackage = packages.find(p => p.id === formData.package_id);
       const startDate = new Date();
       const endDate = new Date();
       if (selectedPackage) endDate.setMonth(endDate.getMonth() + selectedPackage.duration_months);
 
-      const { error: insertError } = await supabase.from("members").insert({
-        member_id: memberIdData, full_name: formData.full_name, phone: formData.phone,
-        email: formData.email || null, address: formData.address || null,
+      await membersService.create({
+        member_id: memberId,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        email: formData.email || null,
+        address: formData.address || null,
         weight: formData.weight ? parseFloat(formData.weight) : null,
         height: formData.height ? parseFloat(formData.height) : null,
         package_id: formData.package_id || null,
         package_start_date: formData.package_id ? startDate.toISOString().split('T')[0] : null,
         package_end_date: formData.package_id ? endDate.toISOString().split('T')[0] : null,
         photo_url: photoUrl,
+        is_active: true,
+        user_id: null,
       });
-      if (insertError) throw insertError;
-      toast.success(`Member created! ID: ${memberIdData}`);
+
+      toast.success(`Member created! ID: ${memberId}`);
       setFormData({ full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "" });
       setPhotoFile(null); setPhotoPreview(null); setShowAddMember(false); fetchMembers();
     } catch (error: unknown) {
@@ -139,14 +152,11 @@ const AdminDashboard = () => {
     try {
       let photoUrl = editingMember.photo_url;
       if (editPhotoFile) {
-        const fileName = `${Date.now()}.${editPhotoFile.name.split('.').pop()}`;
-        const { error: uploadError } = await supabase.storage.from("member-photos").upload(fileName, editPhotoFile);
-        if (uploadError) throw uploadError;
-        photoUrl = supabase.storage.from("member-photos").getPublicUrl(fileName).data.publicUrl;
+        photoUrl = await uploadPhoto(editPhotoFile);
       }
 
       const selectedPackage = packages.find(p => p.id === editFormData.package_id);
-      const updateData: Record<string, unknown> = {
+      const updateData: Partial<Member> = {
         full_name: editFormData.full_name,
         phone: editFormData.phone,
         email: editFormData.email || null,
@@ -168,8 +178,7 @@ const AdminDashboard = () => {
         }
       }
 
-      const { error } = await supabase.from("members").update(updateData).eq("id", editingMember.id);
-      if (error) throw error;
+      await membersService.update(editingMember.id, updateData);
       toast.success("Member updated successfully!");
       setEditingMember(null);
       fetchMembers();
@@ -180,8 +189,7 @@ const AdminDashboard = () => {
 
   const handleDeleteMember = async (member: Member) => {
     try {
-      const { error } = await supabase.from("members").delete().eq("id", member.id);
-      if (error) throw error;
+      await membersService.delete(member.id);
       toast.success(`Member ${member.member_id} deleted successfully!`);
       fetchMembers();
     } catch (error: unknown) {
@@ -278,8 +286,8 @@ const AdminDashboard = () => {
                             <DialogHeader><DialogTitle className="text-foreground">Edit Member - {editingMember?.member_id}</DialogTitle></DialogHeader>
                             <form onSubmit={handleEditSubmit} className="space-y-4">
                               <div className="flex flex-col items-center gap-4">
-                                {editPhotoPreview ? <img src={editPhotoPreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-4 border-primary" /> : <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-4 border-border"><Users className="h-8 w-8 text-muted-foreground" /></div>}
-                                <Label htmlFor="editPhoto" className="cursor-pointer text-primary hover:text-primary/80 text-sm">Change Photo</Label>
+                                {editPhotoPreview ? <img src={editPhotoPreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-4 border-primary" /> : <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-4 border-border"><Users className="h-10 w-10 text-muted-foreground" /></div>}
+                                <Label htmlFor="editPhoto" className="cursor-pointer text-primary hover:text-primary/80">Change Photo</Label>
                                 <Input id="editPhoto" type="file" accept="image/*" onChange={handleEditPhotoChange} className="hidden" />
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -291,34 +299,23 @@ const AdminDashboard = () => {
                                 <div className="space-y-2"><Label className="text-foreground">Height (cm)</Label><Input type="number" value={editFormData.height} onChange={(e) => setEditFormData({...editFormData, height: e.target.value})} className="bg-background border-border text-foreground" /></div>
                               </div>
                               <div className="space-y-2"><Label className="text-foreground">Address</Label><Textarea value={editFormData.address} onChange={(e) => setEditFormData({...editFormData, address: e.target.value})} className="bg-background border-border text-foreground" /></div>
-                              <div className="flex items-center gap-2">
-                                <input type="checkbox" id="is_active" checked={editFormData.is_active} onChange={(e) => setEditFormData({...editFormData, is_active: e.target.checked})} className="rounded" />
-                                <Label htmlFor="is_active" className="text-foreground">Active Member</Label>
-                              </div>
+                              <div className="flex items-center gap-4"><Label className="text-foreground">Status:</Label><span className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${editFormData.is_active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`} onClick={() => setEditFormData({...editFormData, is_active: !editFormData.is_active})}>{editFormData.is_active ? "Active (Click to deactivate)" : "Inactive (Click to activate)"}</span></div>
                               <div className="flex gap-4 justify-end"><Button type="submit" disabled={submitting} className="bg-primary hover:bg-primary/90 text-primary-foreground">{submitting ? "Saving..." : "Save Changes"}</Button></div>
                             </form>
                           </DialogContent>
                         </Dialog>
                         <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                          </AlertDialogTrigger>
+                          <AlertDialogTrigger asChild><Button variant="outline" size="sm" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
                           <AlertDialogContent className="bg-card border-border">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-foreground">Delete Member?</AlertDialogTitle>
-                              <AlertDialogDescription>This will permanently delete {m.full_name} ({m.member_id}). This action cannot be undone.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteMember(m)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                            </AlertDialogFooter>
+                            <AlertDialogHeader><AlertDialogTitle className="text-foreground">Delete Member?</AlertDialogTitle><AlertDialogDescription>This will permanently delete {m.member_id} ({m.full_name}). This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteMember(m)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
                     </td>
                   </tr>
-                ))}
-                  {members.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No members found</td></tr>}</tbody></table></div></CardContent>
+                ))}</tbody>
+              </table></div></CardContent>
             </Card>
           </TabsContent>
 
