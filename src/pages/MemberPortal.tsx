@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, User, Package, Calendar, Scale, Ruler, QrCode, Home } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
+import MemberProgressPhotos from "@/components/MemberProgressPhotos";
 import type { Member, Attendance } from "@/integrations/firebase/types";
 
 const MemberPortal = () => {
@@ -218,6 +219,9 @@ const MemberPortal = () => {
             <p className="text-primary font-mono text-xl font-bold mt-2">{member.member_id}</p>
           </CardContent>
         </Card>
+
+        {/* Progress Photos */}
+        <MemberProgressPhotos memberId={member.id} />
 
         {/* Attendance History */}
         <Card className="bg-card border-border">
