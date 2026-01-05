@@ -43,3 +43,13 @@ export interface UserRole {
   user_id: string;
   role: 'admin' | 'member';
 }
+
+export interface TransformationPhoto {
+  id: string;
+  member_id: string;
+  photo_url: string;
+  photo_date: string;
+  notes: string | null;
+  weight: number | null;
+  created_at: string;
+}

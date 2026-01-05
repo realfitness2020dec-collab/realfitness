@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { membersService, packagesService } from "@/integrations/firebase/services";
+import { membersService, packagesService, seedSampleData } from "@/integrations/firebase/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3, AlertTriangle } from "lucide-react";
+import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3, AlertTriangle, Camera, Database } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import AttendanceAnalytics from "@/components/AttendanceAnalytics";
 import PackageManagement from "@/components/PackageManagement";
 import ExpiryNotifications from "@/components/ExpiryNotifications";
+import TransformationPhotos from "@/components/TransformationPhotos";
 import type { GymPackage, Member } from "@/integrations/firebase/types";
 
 const AdminDashboard = () => {
@@ -27,6 +28,7 @@ const AdminDashboard = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [showAddMember, setShowAddMember] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -199,6 +201,20 @@ const AdminDashboard = () => {
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
+  const handleSeedData = async () => {
+    setSeeding(true);
+    try {
+      await seedSampleData();
+      toast.success("Sample data added successfully!");
+      fetchPackages();
+      fetchMembers();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to seed data");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-pulse text-foreground">Loading...</div></div>;
 
   return (
@@ -220,7 +236,7 @@ const AdminDashboard = () => {
         <div className="flex justify-center mb-8"><img src={realFitnessLogo} alt="Real Fitness Logo" className="h-48 w-48 object-contain" /></div>
         
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto">
+          <TabsList className="grid w-full grid-cols-5 max-w-3xl mx-auto">
             <TabsTrigger value="members" className="gap-2">
               <Users className="h-4 w-4" />
               Members
@@ -228,6 +244,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="packages" className="gap-2">
               <Package className="h-4 w-4" />
               Packages
+            </TabsTrigger>
+            <TabsTrigger value="transformations" className="gap-2">
+              <Camera className="h-4 w-4" />
+              Progress
             </TabsTrigger>
             <TabsTrigger value="expiry" className="gap-2">
               <AlertTriangle className="h-4 w-4" />
@@ -245,7 +265,16 @@ const AdminDashboard = () => {
               <Card className="bg-card border-border"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active Packages</CardTitle><Package className="h-4 w-4 text-primary" /></CardHeader><CardContent><div className="text-2xl font-bold text-foreground">{packages.length}</div></CardContent></Card>
               <Card className="bg-card border-border"><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active Members</CardTitle><Calendar className="h-4 w-4 text-primary" /></CardHeader><CardContent><div className="text-2xl font-bold text-foreground">{members.filter(m => m.is_active).length}</div></CardContent></Card>
             </div>
-            <div className="flex justify-center"><Button onClick={() => setShowAddMember(!showAddMember)} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground" size="lg"><UserPlus className="h-5 w-5" />Add New Member</Button></div>
+            <div className="flex justify-center gap-4">
+              <Button onClick={() => setShowAddMember(!showAddMember)} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
+                <UserPlus className="h-5 w-5" />Add New Member
+              </Button>
+              {members.length === 0 && packages.length === 0 && (
+                <Button onClick={handleSeedData} disabled={seeding} variant="outline" size="lg" className="gap-2">
+                  <Database className="h-5 w-5" />{seeding ? "Adding..." : "Add Sample Data"}
+                </Button>
+              )}
+            </div>
             {showAddMember && (
               <Card className="bg-card border-border"><CardHeader><CardTitle className="text-foreground flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Add New Member</CardTitle></CardHeader>
                 <CardContent><form onSubmit={handleSubmit} className="space-y-6">
@@ -321,6 +350,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="packages">
             <PackageManagement />
+          </TabsContent>
+
+          <TabsContent value="transformations">
+            <TransformationPhotos />
           </TabsContent>
 
           <TabsContent value="expiry">
