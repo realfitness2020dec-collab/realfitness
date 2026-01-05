@@ -1,6 +1,6 @@
 import { ref, get, set, remove, update } from 'firebase/database';
 import { database } from './client';
-import type { Member, GymPackage, Attendance } from './types';
+import type { Member, GymPackage, Attendance, TransformationPhoto } from './types';
 
 // Helper to generate unique IDs
 const generateId = () => crypto.randomUUID();
@@ -170,6 +170,97 @@ export const attendanceService = {
     const all = await this.getAll();
     return all.filter(a => new Date(a.check_in_time) >= date);
   },
+};
+
+// ===================== TRANSFORMATION PHOTOS =====================
+
+export const transformationPhotosService = {
+  async getAll(): Promise<TransformationPhoto[]> {
+    const snapshot = await get(ref(database, 'transformation_photos'));
+    if (!snapshot.exists()) return [];
+    const data = snapshot.val();
+    return Object.entries(data).map(([id, photo]) => ({ 
+      ...(photo as Omit<TransformationPhoto, 'id'>), 
+      id 
+    })).sort((a, b) => new Date(b.photo_date).getTime() - new Date(a.photo_date).getTime());
+  },
+
+  async getByMemberId(memberId: string): Promise<TransformationPhoto[]> {
+    const all = await this.getAll();
+    return all.filter(p => p.member_id === memberId)
+      .sort((a, b) => new Date(a.photo_date).getTime() - new Date(b.photo_date).getTime());
+  },
+
+  async create(photo: Omit<TransformationPhoto, 'id' | 'created_at'>): Promise<TransformationPhoto> {
+    const id = generateId();
+    const newPhoto: TransformationPhoto = {
+      ...photo,
+      id,
+      created_at: now(),
+    };
+    await set(ref(database, `transformation_photos/${id}`), newPhoto);
+    return newPhoto;
+  },
+
+  async delete(id: string): Promise<void> {
+    await remove(ref(database, `transformation_photos/${id}`));
+  },
+};
+
+// ===================== SEED DATA =====================
+
+export const seedSampleData = async (): Promise<void> => {
+  // Check if data already exists
+  const existingPackages = await packagesService.getAll();
+  if (existingPackages.length > 0) {
+    throw new Error('Sample data already exists!');
+  }
+
+  // Create packages
+  const packages = [
+    { name: 'Monthly Basic', description: 'Access to gym equipment', price: 999, duration_months: 1, is_active: true },
+    { name: 'Quarterly Premium', description: 'Gym + Personal trainer sessions', price: 2499, duration_months: 3, is_active: true },
+    { name: 'Half-Yearly Pro', description: 'All facilities + diet plan', price: 4499, duration_months: 6, is_active: true },
+    { name: 'Annual Elite', description: 'Complete fitness package', price: 7999, duration_months: 12, is_active: true },
+  ];
+
+  const createdPackages: GymPackage[] = [];
+  for (const pkg of packages) {
+    const created = await packagesService.create(pkg);
+    createdPackages.push(created);
+  }
+
+  // Create sample members
+  const sampleMembers = [
+    { full_name: 'Rahul Sharma', phone: '9876543210', email: 'rahul@example.com', weight: 75, height: 175 },
+    { full_name: 'Priya Patel', phone: '9876543211', email: 'priya@example.com', weight: 58, height: 162 },
+    { full_name: 'Amit Kumar', phone: '9876543212', email: 'amit@example.com', weight: 82, height: 180 },
+  ];
+
+  for (let i = 0; i < sampleMembers.length; i++) {
+    const member = sampleMembers[i];
+    const memberId = await membersService.generateMemberId();
+    const pkg = createdPackages[i % createdPackages.length];
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + pkg.duration_months);
+
+    await membersService.create({
+      member_id: memberId,
+      full_name: member.full_name,
+      phone: member.phone,
+      email: member.email,
+      address: null,
+      weight: member.weight,
+      height: member.height,
+      package_id: pkg.id,
+      package_start_date: startDate.toISOString().split('T')[0],
+      package_end_date: endDate.toISOString().split('T')[0],
+      photo_url: null,
+      is_active: true,
+      user_id: null,
+    });
+  }
 };
 
 // ===================== STORAGE (using Supabase for now) =====================
