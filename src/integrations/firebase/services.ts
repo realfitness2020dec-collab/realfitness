@@ -1,4 +1,5 @@
-import { database, ref, get, set, push, remove, update, query, orderByChild, equalTo, limitToLast } from './client';
+import { ref, get, set, remove, update } from 'firebase/database';
+import { database } from './client';
 import type { Member, GymPackage, Attendance } from './types';
 
 // Helper to generate unique IDs
