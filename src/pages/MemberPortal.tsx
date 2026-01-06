@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { attendanceService } from "@/integrations/firebase/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Package, Calendar, Scale, Ruler, Home } from "lucide-react";
+import { LogOut, User, Package, Calendar, Scale, Ruler, Home, Bell } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import MemberProgressPhotos from "@/components/MemberProgressPhotos";
 import MemberQRScanner from "@/components/MemberQRScanner";
+import DailyMotivation from "@/components/DailyMotivation";
+import AttendanceStatus from "@/components/AttendanceStatus";
 import type { Member, Attendance } from "@/integrations/firebase/types";
 
 const MemberPortal = () => {
@@ -69,6 +71,27 @@ const MemberPortal = () => {
       </header>
 
       <main className="container mx-auto p-6 space-y-6">
+        {/* Daily Motivation */}
+        <DailyMotivation />
+
+        {/* Expiry Warning */}
+        {daysRemaining <= 7 && daysRemaining > 0 && (
+          <Card className="bg-orange-500/10 border-orange-500/30 border-2">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Bell className="h-6 w-6 text-orange-400 animate-pulse" />
+              <div>
+                <p className="font-bold text-orange-400">Membership Expiring Soon!</p>
+                <p className="text-sm text-muted-foreground">
+                  Your membership expires in {daysRemaining} day{daysRemaining !== 1 ? "s" : ""}. Please renew to continue your fitness journey.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Attendance Status */}
+        <AttendanceStatus memberId={member.id} memberName={member.full_name} />
+
         {/* Profile Section */}
         <Card className="bg-card border-border animate-scale-in">
           <CardContent className="pt-6">
