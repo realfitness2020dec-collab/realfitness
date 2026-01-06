@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
 import { attendanceService } from "@/integrations/firebase/services";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Package, Calendar, Scale, Ruler, QrCode, Home } from "lucide-react";
+import { LogOut, User, Package, Calendar, Scale, Ruler, Home } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import MemberProgressPhotos from "@/components/MemberProgressPhotos";
+import MemberQRScanner from "@/components/MemberQRScanner";
 import type { Member, Attendance } from "@/integrations/firebase/types";
 
 const MemberPortal = () => {
@@ -203,22 +203,8 @@ const MemberPortal = () => {
           </CardContent>
         </Card>
 
-        {/* QR Code for Check-In */}
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground flex items-center gap-2">
-              <QrCode className="h-5 w-5 text-primary" />
-              Your Check-In QR Code
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <div className="bg-white p-4 rounded-lg">
-              <QRCodeSVG value={member.member_id} size={200} level="H" />
-            </div>
-            <p className="text-muted-foreground mt-4 text-center">Show this QR code at the gym entrance to check in</p>
-            <p className="text-primary font-mono text-xl font-bold mt-2">{member.member_id}</p>
-          </CardContent>
-        </Card>
+        {/* Scan to Check-In */}
+        <MemberQRScanner member={member} onSuccess={() => fetchAttendance(member.id)} />
 
         {/* Progress Photos */}
         <MemberProgressPhotos memberId={member.id} />
