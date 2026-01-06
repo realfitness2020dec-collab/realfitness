@@ -1,17 +1,22 @@
 import { useEffect, useState } from "react";
 import { membersService, packagesService } from "@/integrations/firebase/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Clock, Phone, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Clock, Phone, Mail, Send, CheckCircle2, Loader2 } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
+import { toast } from "sonner";
 import type { Member, GymPackage } from "@/integrations/firebase/types";
 
 type MemberWithPackage = Member & {
   gym_packages?: GymPackage | null;
+  notificationSent?: boolean;
 };
 
 const ExpiryNotifications = () => {
   const [expiringMembers, setExpiringMembers] = useState<MemberWithPackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
+  const [sendingAll, setSendingAll] = useState(false);
 
   useEffect(() => {
     fetchExpiringMembers();
@@ -48,6 +53,45 @@ const ExpiryNotifications = () => {
     return "bg-yellow-500/20 text-yellow-400 border-yellow-500/50";
   };
 
+  const sendWhatsAppReminder = async (member: MemberWithPackage) => {
+    setSendingTo(member.id);
+    try {
+      const daysLeft = getDaysRemaining(member.package_end_date!);
+      const message = `Hi ${member.full_name}! 🏋️\n\nYour Real Fitness membership expires ${daysLeft === 0 ? 'today' : daysLeft === 1 ? 'tomorrow' : `in ${daysLeft} days`} (${format(new Date(member.package_end_date!), "MMM dd, yyyy")}).\n\nRenew now to continue your fitness journey! 💪\n\nContact us or visit the gym to renew.\n\n- Real Fitness Team`;
+      
+      // Format phone number for WhatsApp (remove spaces, add country code if needed)
+      const phone = member.phone.replace(/\s+/g, "").replace(/^0/, "91");
+      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      
+      // Open WhatsApp in new tab
+      window.open(whatsappUrl, "_blank");
+      
+      // Mark as sent
+      setExpiringMembers(prev => 
+        prev.map(m => m.id === member.id ? { ...m, notificationSent: true } : m)
+      );
+      
+      toast.success(`Reminder opened for ${member.full_name}`);
+    } catch (error) {
+      toast.error("Failed to send reminder");
+    } finally {
+      setSendingTo(null);
+    }
+  };
+
+  const sendAllReminders = async () => {
+    setSendingAll(true);
+    const unsent = expiringMembers.filter(m => !m.notificationSent);
+    
+    for (const member of unsent) {
+      await sendWhatsAppReminder(member);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between opens
+    }
+    
+    setSendingAll(false);
+    toast.success(`Opened reminders for ${unsent.length} members`);
+  };
+
   if (loading) {
     return (
       <Card className="bg-card border-border">
@@ -60,11 +104,26 @@ const ExpiryNotifications = () => {
 
   return (
     <Card className="bg-card border-border">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-foreground flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-yellow-500" />
           Expiring Memberships (Next 7 Days)
         </CardTitle>
+        {expiringMembers.length > 0 && (
+          <Button
+            onClick={sendAllReminders}
+            disabled={sendingAll || expiringMembers.every(m => m.notificationSent)}
+            className="gap-2"
+            size="sm"
+          >
+            {sendingAll ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+            Send All Reminders
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {expiringMembers.length === 0 ? (
@@ -116,17 +175,35 @@ const ExpiryNotifications = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-4 mt-3 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {member.phone}
-                    </div>
-                    {member.email && (
+                  <div className="flex gap-4 mt-3 text-sm items-center justify-between">
+                    <div className="flex gap-4">
                       <div className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {member.email}
+                        <Phone className="h-3 w-3" />
+                        {member.phone}
                       </div>
-                    )}
+                      {member.email && (
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {member.email}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={member.notificationSent ? "outline" : "default"}
+                      onClick={() => sendWhatsAppReminder(member)}
+                      disabled={sendingTo === member.id}
+                      className="gap-1"
+                    >
+                      {sendingTo === member.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : member.notificationSent ? (
+                        <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Send className="h-3 w-3" />
+                      )}
+                      {member.notificationSent ? "Sent" : "Remind"}
+                    </Button>
                   </div>
                 </div>
               );
