@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { attendanceService } from "@/integrations/firebase/services";
+import { attendanceService } from "@/services/supabase";
+import type { Member, Attendance } from "@/services/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, User, Package, Calendar, Scale, Ruler, Home, Bell } from "lucide-react";
@@ -9,7 +10,6 @@ import MemberProgressPhotos from "@/components/MemberProgressPhotos";
 import MemberQRScanner from "@/components/MemberQRScanner";
 import DailyMotivation from "@/components/DailyMotivation";
 import AttendanceStatus from "@/components/AttendanceStatus";
-import type { Member, Attendance } from "@/integrations/firebase/types";
 
 const MemberPortal = () => {
   const navigate = useNavigate();

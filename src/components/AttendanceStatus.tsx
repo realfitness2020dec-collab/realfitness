@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, Clock, Calendar } from "lucide-react";
-import { attendanceService } from "@/integrations/firebase/services";
+import { attendanceService } from "@/services/supabase";
+import type { Attendance } from "@/services/supabase";
 import { format, isToday, startOfMonth, endOfMonth } from "date-fns";
-import type { Attendance } from "@/integrations/firebase/types";
 
 interface AttendanceStatusProps {
   memberId: string;

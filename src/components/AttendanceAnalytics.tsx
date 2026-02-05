@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { attendanceService, membersService } from "@/integrations/firebase/services";
+import { attendanceService, membersService } from "@/services/supabase";
+import type { Attendance, Member } from "@/services/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { CalendarDays, TrendingUp, Clock, Users } from "lucide-react";
-import type { Attendance, Member } from "@/integrations/firebase/types";
 
 interface AttendanceWithMember extends Attendance {
   member?: Member | null;

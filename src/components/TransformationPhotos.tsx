@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Camera, Trash2, Calendar, Weight, ArrowLeftRight, TrendingDown, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { membersService, transformationPhotosService } from "@/integrations/firebase/services";
-import type { Member, TransformationPhoto } from "@/integrations/firebase/types";
+import { membersService, transformationPhotosService } from "@/services/supabase";
+import type { Member, TransformationPhoto } from "@/services/supabase";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const TransformationPhotos = () => {

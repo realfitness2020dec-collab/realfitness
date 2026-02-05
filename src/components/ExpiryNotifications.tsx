@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { membersService, packagesService } from "@/integrations/firebase/services";
+import { membersService, packagesService } from "@/services/supabase";
+import type { Member, GymPackage } from "@/services/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, Phone, Mail, Send, CheckCircle2, Loader2 } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 import { toast } from "sonner";
-import type { Member, GymPackage } from "@/integrations/firebase/types";
 
 type MemberWithPackage = Member & {
   gym_packages?: GymPackage | null;

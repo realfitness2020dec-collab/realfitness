@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { packagesService } from "@/integrations/firebase/services";
+import { packagesService } from "@/services/supabase";
+import type { GymPackage } from "@/services/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Package, Plus, Pencil, Trash2, IndianRupee, Clock } from "lucide-react";
-import type { GymPackage } from "@/integrations/firebase/types";
 
 const PackageManagement = () => {
   const [packages, setPackages] = useState<GymPackage[]>([]);
