@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Camera, TrendingDown, TrendingUp, ArrowLeftRight } from "lucide-react";
-import { transformationPhotosService } from "@/integrations/firebase/services";
-import type { TransformationPhoto } from "@/integrations/firebase/types";
+import { transformationPhotosService } from "@/services/supabase";
+import type { TransformationPhoto } from "@/services/supabase";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface MemberProgressPhotosProps {

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { membersService, packagesService, seedSampleData } from "@/integrations/firebase/services";
+import { membersService, packagesService, seedSampleData, storageService } from "@/services/supabase";
+import type { GymPackage, Member } from "@/services/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,13 +14,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3, AlertTriangle, Camera, Database } from "lucide-react";
+import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3, AlertTriangle, Camera, Database, FileText } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import AttendanceAnalytics from "@/components/AttendanceAnalytics";
 import PackageManagement from "@/components/PackageManagement";
 import ExpiryNotifications from "@/components/ExpiryNotifications";
 import TransformationPhotos from "@/components/TransformationPhotos";
-import type { GymPackage, Member } from "@/integrations/firebase/types";
+import BlogManagement from "@/components/BlogManagement";
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -56,13 +57,7 @@ const AdminDashboard = () => {
 
   const fetchMembers = async () => {
     const data = await membersService.getAll();
-    // Attach package info
-    const allPackages = await packagesService.getAll();
-    const membersWithPackages = data.map(m => ({
-      ...m,
-      gym_packages: allPackages.find(p => p.id === m.package_id) || null,
-    }));
-    setMembers(membersWithPackages);
+    setMembers(data);
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,10 +81,7 @@ const AdminDashboard = () => {
   };
 
   const uploadPhoto = async (file: File): Promise<string | null> => {
-    const fileName = `${Date.now()}.${file.name.split('.').pop()}`;
-    const { error: uploadError } = await supabase.storage.from("member-photos").upload(fileName, file);
-    if (uploadError) throw uploadError;
-    return supabase.storage.from("member-photos").getPublicUrl(fileName).data.publicUrl;
+    return storageService.uploadPhoto(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -236,7 +228,7 @@ const AdminDashboard = () => {
         <div className="flex justify-center mb-8"><img src={realFitnessLogo} alt="Real Fitness Logo" className="h-48 w-48 object-contain" /></div>
         
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 max-w-3xl mx-auto">
+          <TabsList className="grid w-full grid-cols-6 max-w-4xl mx-auto">
             <TabsTrigger value="members" className="gap-2">
               <Users className="h-4 w-4" />
               Members
@@ -244,6 +236,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="packages" className="gap-2">
               <Package className="h-4 w-4" />
               Packages
+            </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Blog
             </TabsTrigger>
             <TabsTrigger value="transformations" className="gap-2">
               <Camera className="h-4 w-4" />
@@ -350,6 +346,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="packages">
             <PackageManagement />
+          </TabsContent>
+
+          <TabsContent value="blog">
+            <BlogManagement />
           </TabsContent>
 
           <TabsContent value="transformations">

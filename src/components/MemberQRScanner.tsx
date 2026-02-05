@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Camera, CheckCircle, XCircle, QrCode } from "lucide-react";
 import { toast } from "sonner";
-import { attendanceService } from "@/integrations/firebase/services";
+import { attendanceService } from "@/services/supabase";
+import type { Member } from "@/services/supabase";
 import QRScanner from "./QRScanner";
-import type { Member } from "@/integrations/firebase/types";
 
 interface MemberQRScannerProps {
   member: Member;
