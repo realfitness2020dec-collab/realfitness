@@ -1,35 +1,36 @@
-import { Check, Star } from "lucide-react";
+import { Check, Star, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const packages = [
   {
-    name: "Gents Package",
-    price: 1500,
-    duration: "1 Month",
-    features: ["Full Gym Access", "Locker Room", "Basic Training Guide", "Free Parking"],
-    popular: false,
-  },
-  {
-    name: "Ladies Package",
+    name: "1 Month",
     price: 1200,
     duration: "1 Month",
-    features: ["Full Gym Access", "Ladies Section", "Cardio Zone", "Yoga Classes"],
+    features: ["Full Gym Access", "Admission Fee ₹500", "Locker Room", "Basic Training Guide"],
+    popular: false,
+    note: "+ ₹500 Admission Fee",
+  },
+  {
+    name: "3 Months",
+    price: 3000,
+    duration: "3 Months",
+    features: ["Full Gym Access", "Locker Room", "Training Guide", "Free Parking"],
     popular: false,
   },
   {
-    name: "Couple Package",
-    price: 2500,
-    duration: "1 Month",
-    features: ["Full Gym Access", "Partner Workouts", "Diet Plan", "Personal Trainer"],
+    name: "6 Months",
+    price: 4500,
+    duration: "6 Months",
+    features: ["Full Gym Access", "Personal Trainer", "Diet Plan", "Locker Room"],
     popular: true,
   },
   {
-    name: "Student Package",
-    price: 800,
-    duration: "1 Month",
-    features: ["Full Gym Access", "Flexible Hours", "Study Break Sessions", "Valid ID Required"],
+    name: "1 Year",
+    price: 6500,
+    duration: "12 Months",
+    features: ["Full Gym Access", "Personal Trainer", "Diet Plan", "Priority Support"],
     popular: false,
   },
 ];
@@ -94,13 +95,17 @@ const PackagesSection = () => {
                 </ul>
 
                 <Button
-                  className={`w-full transition-all hover:scale-105 ${
+                  asChild
+                  className={`w-full gap-2 transition-all hover:scale-105 ${
                     pkg.popular
                       ? "bg-primary text-primary-foreground hover:bg-primary/90"
                       : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                   }`}
                 >
-                  Join Now
+                  <a href="tel:8248756157">
+                    <Phone className="h-4 w-4" />
+                    Join Now
+                  </a>
                 </Button>
               </CardContent>
             </Card>
