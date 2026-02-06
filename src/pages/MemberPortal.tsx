@@ -10,6 +10,7 @@ import MemberProgressPhotos from "@/components/MemberProgressPhotos";
 import MemberQRScanner from "@/components/MemberQRScanner";
 import DailyMotivation from "@/components/DailyMotivation";
 import AttendanceStatus from "@/components/AttendanceStatus";
+import MemberWorkoutChat from "@/components/MemberWorkoutChat";
 
 const MemberPortal = () => {
   const navigate = useNavigate();
@@ -231,6 +232,9 @@ const MemberPortal = () => {
 
         {/* Progress Photos */}
         <MemberProgressPhotos memberId={member.id} />
+
+        {/* AI Workout Coach */}
+        <MemberWorkoutChat member={member} />
 
         {/* Attendance History */}
         <Card className="bg-card border-border">

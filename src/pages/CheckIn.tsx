@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Home, QrCode, Lock, RefreshCw } from "lucide-react";
+import { Home, QrCode, Lock, RefreshCw, Download } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 
 const ADMIN_PASSWORD = "siva$blacksquad";
@@ -21,6 +21,7 @@ const CheckIn = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [qrCode, setQrCode] = useState("");
+  const qrContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check for stored QR code for today
@@ -52,6 +53,78 @@ const CheckIn = () => {
     setQrCode(newCode);
     sessionStorage.setItem("gymQRCode", newCode);
     sessionStorage.setItem("gymQRDate", new Date().toISOString().split('T')[0]);
+  };
+
+  const downloadQR = () => {
+    const svgElement = qrContainerRef.current?.querySelector("svg");
+    if (!svgElement) return;
+
+    const canvas = document.createElement("canvas");
+    const size = 400;
+    const padding = 60;
+    const logoSize = 60;
+    const totalSize = size + padding * 2;
+    canvas.width = totalSize;
+    canvas.height = totalSize + 50; // extra space for text
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // White background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw QR code from SVG
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    const qrImg = new Image();
+    qrImg.onload = () => {
+      ctx.drawImage(qrImg, padding, padding, size, size);
+      URL.revokeObjectURL(svgUrl);
+
+      // Draw logo on top of QR center
+      const logoImg = new Image();
+      logoImg.crossOrigin = "anonymous";
+      logoImg.onload = () => {
+        const logoX = padding + (size - logoSize) / 2;
+        const logoY = padding + (size - logoSize) / 2;
+        // White circle behind logo
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+
+        // Add text below QR
+        ctx.fillStyle = "#333333";
+        ctx.font = "bold 18px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("REAL FITNESS - Scan to Check-In", canvas.width / 2, size + padding + 30);
+        ctx.font = "14px Arial";
+        ctx.fillStyle = "#666666";
+        ctx.fillText(new Date().toLocaleDateString(), canvas.width / 2, size + padding + 50);
+
+        // Download
+        const link = document.createElement("a");
+        link.download = `RealFitness-QR-${new Date().toISOString().split("T")[0]}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      };
+      logoImg.onerror = () => {
+        // Download without logo if logo fails to load
+        ctx.fillStyle = "#333333";
+        ctx.font = "bold 18px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("REAL FITNESS - Scan to Check-In", canvas.width / 2, size + padding + 30);
+        const link = document.createElement("a");
+        link.download = `RealFitness-QR-${new Date().toISOString().split("T")[0]}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      };
+      logoImg.src = realFitnessLogo;
+    };
+    qrImg.src = svgUrl;
   };
 
   // Password gate screen
@@ -141,7 +214,7 @@ const CheckIn = () => {
           
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center">
-              <div className="bg-white p-6 rounded-xl shadow-lg">
+              <div ref={qrContainerRef} className="bg-white p-6 rounded-xl shadow-lg">
                 <QRCodeSVG value={qrCode} size={280} level="H" />
               </div>
               <p className="text-primary font-mono text-lg font-bold mt-4">{qrCode}</p>
@@ -150,14 +223,23 @@ const CheckIn = () => {
               </p>
             </div>
 
-            <Button 
-              variant="outline" 
-              onClick={regenerateCode}
-              className="w-full gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Generate New Code
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={regenerateCode}
+                className="flex-1 gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Generate New Code
+              </Button>
+              <Button 
+                onClick={downloadQR}
+                className="flex-1 gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download QR
+              </Button>
+            </div>
 
             <div className="bg-muted/50 p-4 rounded-lg">
               <h4 className="font-medium text-foreground mb-2">Instructions:</h4>

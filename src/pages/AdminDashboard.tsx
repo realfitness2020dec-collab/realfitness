@@ -21,6 +21,7 @@ import PackageManagement from "@/components/PackageManagement";
 import ExpiryNotifications from "@/components/ExpiryNotifications";
 import TransformationPhotos from "@/components/TransformationPhotos";
 import BlogManagement from "@/components/BlogManagement";
+import RemainingDaysEditor from "@/components/RemainingDaysEditor";
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -300,9 +301,19 @@ const AdminDashboard = () => {
                     <td className="py-3 px-4 text-primary font-mono font-bold">{m.member_id}</td>
                     <td className="py-3 px-4 text-foreground">{m.full_name}</td>
                     <td className="py-3 px-4 text-foreground">{m.phone}</td>
-                    <td className="py-3 px-4"><span className={`px-2 py-1 rounded-full text-xs font-medium ${m.is_active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{m.is_active ? "Active" : "Inactive"}</span></td>
+                    <td className="py-3 px-4">
+                      <div className="flex flex-col gap-1">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block w-fit ${m.is_active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{m.is_active ? "Active" : "Inactive"}</span>
+                        {m.package_end_date && (
+                          <span className="text-xs text-muted-foreground">
+                            {Math.max(0, Math.ceil((new Date(m.package_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days left
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
+                        <RemainingDaysEditor member={m} onUpdated={fetchMembers} />
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="outline" size="sm" onClick={() => openEditDialog(m)}><Pencil className="h-4 w-4" /></Button>
