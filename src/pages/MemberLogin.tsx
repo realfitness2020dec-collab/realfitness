@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { membersService } from "@/services/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,17 +19,16 @@ const MemberLogin = () => {
     setLoading(true);
 
     try {
-      const member = await membersService.getByMemberId(memberId);
+      const { data, error } = await supabase.functions.invoke("member-login", {
+        body: { member_id: memberId },
+      });
 
-      if (!member) {
-        toast.error("Member ID not found. Please check and try again.");
+      if (error || data?.error) {
+        toast.error(data?.error || "Member ID not found. Please check and try again.");
         return;
       }
 
-      if (!member.is_active) {
-        toast.error("Your membership is inactive. Please contact the gym.");
-        return;
-      }
+      const member = data.member;
 
       // Store member info in session storage for member portal
       sessionStorage.setItem("member", JSON.stringify(member));
