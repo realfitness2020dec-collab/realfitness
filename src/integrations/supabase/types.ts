@@ -135,6 +135,38 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          member_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          member_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          member_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gym_packages: {
         Row: {
           created_at: string | null
@@ -185,6 +217,50 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      member_fitness_profiles: {
+        Row: {
+          activity_level: string | null
+          alcohol_consumption: boolean | null
+          created_at: string
+          diet_type: string | null
+          fitness_goal: string | null
+          id: string
+          member_id: string
+          physical_issues: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity_level?: string | null
+          alcohol_consumption?: boolean | null
+          created_at?: string
+          diet_type?: string | null
+          fitness_goal?: string | null
+          id?: string
+          member_id: string
+          physical_issues?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity_level?: string | null
+          alcohol_consumption?: boolean | null
+          created_at?: string
+          diet_type?: string | null
+          fitness_goal?: string | null
+          id?: string
+          member_id?: string
+          physical_issues?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_fitness_profiles_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       members: {
         Row: {

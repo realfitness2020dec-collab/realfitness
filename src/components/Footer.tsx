@@ -20,7 +20,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Transform your body and mind with our world-class fitness facilities and expert trainers.
+              Transform your body and mind with our world-class fitness facilities. Owned & operated by <span className="text-primary font-medium">Siva</span>.
             </p>
           </div>
 
@@ -30,11 +30,11 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 text-primary" />
-                123 Fitness Street, City
+                Kunnathur, Tamil Nadu
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4 text-primary" />
-                +91 98765 43210
+                +91 82487 56157
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4 text-primary" />
@@ -93,7 +93,7 @@ const Footer = () => {
         {/* Copyright */}
         <div className="mt-12 border-t border-border/50 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Real Fitness - Black Squad. All rights reserved.
+            © 2025 Real Fitness - Black Squad | Kunnathur. All rights reserved.
           </p>
         </div>
       </div>
