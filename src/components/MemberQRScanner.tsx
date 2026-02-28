@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Camera, CheckCircle, XCircle, QrCode } from "lucide-react";
 import { toast } from "sonner";
-import { attendanceService } from "@/services/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import type { Member } from "@/services/supabase";
 import QRScanner from "./QRScanner";
 
@@ -31,27 +31,18 @@ const MemberQRScanner = ({ member, onSuccess }: MemberQRScannerProps) => {
     setChecking(true);
     
     try {
-      // Check if member is active
-      if (!member.is_active) {
-        setResult({ success: false, message: "Your membership is inactive" });
-        toast.error("Membership is inactive!");
-        setTimeout(() => setResult(null), 3000);
-        return;
-      }
-
-      // Check if membership expired
-      if (member.package_end_date && new Date(member.package_end_date) < new Date()) {
-        setResult({ success: false, message: "Your membership has expired" });
-        toast.error("Membership has expired!");
-        setTimeout(() => setResult(null), 3000);
-        return;
-      }
-
-      // Record attendance
-      await attendanceService.create({
-        member_id: member.id,
-        qr_code_used: scannedCode,
+      // Use edge function to record attendance (bypasses RLS)
+      const { data, error } = await supabase.functions.invoke("member-checkin", {
+        body: { member_id: member.id, qr_code_used: scannedCode },
       });
+
+      if (error || data?.error) {
+        const errorMsg = data?.error || "Check-in failed";
+        setResult({ success: false, message: errorMsg });
+        toast.error(errorMsg);
+        setTimeout(() => setResult(null), 3000);
+        return;
+      }
 
       setResult({ success: true, message: "Check-in successful!" });
       toast.success("Welcome! Attendance recorded.");

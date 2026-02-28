@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { attendanceService } from "@/services/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import type { Member, Attendance } from "@/services/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,8 +29,16 @@ const MemberPortal = () => {
   }, [navigate]);
 
   const fetchAttendance = async (memberId: string) => {
-    const data = await attendanceService.getByMemberId(memberId, 10);
-    setAttendance(data);
+    try {
+      const { data, error } = await supabase.functions.invoke("member-attendance", {
+        body: { member_id: memberId, limit: 10 },
+      });
+      if (!error && data?.attendance) {
+        setAttendance(data.attendance);
+      }
+    } catch (e) {
+      console.error("Failed to fetch attendance", e);
+    }
   };
 
   const handleLogout = () => {

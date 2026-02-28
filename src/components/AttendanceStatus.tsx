@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, Clock, Calendar } from "lucide-react";
-import { attendanceService } from "@/services/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import type { Attendance } from "@/services/supabase";
 import { format, isToday, startOfMonth, endOfMonth } from "date-fns";
 
@@ -21,7 +21,10 @@ const AttendanceStatus = ({ memberId, memberName }: AttendanceStatusProps) => {
 
   const fetchAttendanceStatus = async () => {
     try {
-      const records = await attendanceService.getByMemberId(memberId, 50);
+      const { data, error } = await supabase.functions.invoke("member-attendance", {
+        body: { member_id: memberId, limit: 50 },
+      });
+      const records: Attendance[] = (!error && data?.attendance) ? data.attendance : [];
       
       // Check if attended today
       const todayRecord = records.find(r => 
