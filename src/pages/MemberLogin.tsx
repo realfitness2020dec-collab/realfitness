@@ -19,6 +19,17 @@ const MemberLogin = () => {
     setLoading(true);
 
     try {
+      // Clear any stale auth session to prevent refresh token loops
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        // Check if session is actually valid by trying a simple operation
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          // Stale session - clear it so it doesn't block requests
+          await supabase.auth.signOut({ scope: 'local' });
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke("member-login", {
         body: { member_id: memberId },
       });
