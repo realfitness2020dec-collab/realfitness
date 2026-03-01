@@ -14,10 +14,10 @@ const HeroSection = () => {
   }, []);
 
   const stats = [
-    { icon: Users, value: "500+", label: "Active Members" },
+    { icon: Users, value: "50+", label: "Active Members" },
     { icon: Dumbbell, value: "50+", label: "Equipment" },
     { icon: Trophy, value: "10+", label: "Years Experience" },
-    { icon: Clock, value: "24/7", label: "Open Hours" },
+    { icon: Clock, value: "M-5 to 9 E-5 to 9", label: "Open Hours" },
   ];
 
   return (
@@ -30,9 +30,9 @@ const HeroSection = () => {
       {particles.map((p) => <div key={p.id} className="absolute h-2 w-2 rounded-full bg-primary/30 animate-float" style={{ left: `${p.x}%`, top: `${p.y}%`, animationDelay: `${p.delay}s` }} />)}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 text-center">
         <div className="mb-8"><img src={realFitnessLogo} alt="Real Fitness Logo" className="h-48 w-48 md:h-64 md:w-64 object-contain" /></div>
-        <h1 className="font-display text-5xl font-black uppercase tracking-wider text-foreground md:text-7xl">Real <span className="text-primary">Fitness</span></h1>
-        <p className="font-display text-xl tracking-[0.3em] text-primary md:text-2xl mb-8">BLACK SQUAD</p>
-        <p className="mb-12 max-w-2xl text-xl text-muted-foreground md:text-2xl">Transform Your Body, Transform Your Life</p>
+        <h1 className="font-display text-4xl font-black uppercase tracking-wider text-foreground md:text-6xl lg:text-7xl">The <span className="text-primary">Best AI-Powered Gym</span> in Kunnathur</h1>
+        <p className="font-display text-xl tracking-[0.3em] text-primary md:text-2xl mb-4">Your Digital Fitness Partner</p>
+        <p className="mb-12 max-w-2xl text-lg text-muted-foreground md:text-xl">Welcome to Real Fitness, Kunnathur's top digital gym. Our AI-powered platform creates personalized workouts to help you achieve your fitness goals faster.</p>
         <div className="flex flex-col gap-4 sm:flex-row">
           <Button size="lg" onClick={() => navigate("/admin")} className="gap-2 bg-primary px-8 py-6 text-lg font-bold text-primary-foreground hover:bg-primary/90"><Shield className="h-5 w-5" />Admin Login</Button>
           <Button size="lg" variant="outline" onClick={() => navigate("/member")} className="gap-2 border-primary px-8 py-6 text-lg font-bold text-primary hover:bg-primary hover:text-primary-foreground"><User className="h-5 w-5" />Member Login</Button>

@@ -1,9 +1,8 @@
-import { Dumbbell, MapPin, Phone, Mail, Clock } from "lucide-react";
+import { Dumbbell, MapPin, Phone, Mail } from "lucide-react";
 
 const Footer = () => {
   return (
     <footer className="relative overflow-hidden border-t border-border/50 bg-card">
-      {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-50" />
 
       <div className="container relative mx-auto px-4 py-12">
@@ -16,17 +15,17 @@ const Footer = () => {
                 <h3 className="font-display text-xl font-bold text-foreground">
                   Real <span className="text-primary">Fitness</span>
                 </h3>
-                <p className="text-xs tracking-wider text-primary">BLACK SQUAD</p>
+                <p className="text-xs tracking-wider text-primary">AI-POWERED GYM</p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Transform your body and mind with our world-class fitness facilities. Owned & operated by <span className="text-primary font-medium">Siva</span>.
+              Welcome to the best gym in Kunnathur. As a leading AI-powered digital gym, we offer a unique fitness experience. Owned & operated by <span className="text-primary font-medium">Siva</span>.
             </p>
           </div>
 
-          {/* Contact Info */}
+          {/* Visit Us */}
           <div>
-            <h4 className="mb-4 font-display text-lg font-bold text-foreground">Contact Us</h4>
+            <h4 className="mb-4 font-display text-lg font-bold text-foreground">Visit Us</h4>
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 text-primary" />
@@ -34,66 +33,39 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4 text-primary" />
-                +91 82487 56157
+                +91 8248756157
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4 text-primary" />
-                info@realfitness.com
+                realfitness2020dec@gmail.com
               </li>
             </ul>
           </div>
 
-          {/* Working Hours */}
+          {/* Our Features */}
           <div>
-            <h4 className="mb-4 font-display text-lg font-bold text-foreground">Working Hours</h4>
+            <h4 className="mb-4 font-display text-lg font-bold text-foreground">Our Features</h4>
             <ul className="space-y-3">
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 text-primary" />
-                Mon - Fri: 5:00 AM - 11:00 PM
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 text-primary" />
-                Saturday: 6:00 AM - 10:00 PM
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 text-primary" />
-                Sunday: 7:00 AM - 8:00 PM
-              </li>
+              <li className="text-sm text-muted-foreground">AI-Powered Workouts</li>
+              <li className="text-sm text-muted-foreground">Digital Tracking</li>
+              <li className="text-sm text-muted-foreground">Why We're Kunnathur's Best</li>
+              <li className="text-sm text-muted-foreground">Contact</li>
             </ul>
           </div>
 
-          {/* Quick Links */}
+          {/* Our Mission */}
           <div>
-            <h4 className="mb-4 font-display text-lg font-bold text-foreground">Quick Links</h4>
-            <ul className="space-y-3">
-              <li>
-                <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-                  Membership Plans
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-                  Trainers
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-                  Contact
-                </a>
-              </li>
-            </ul>
+            <h4 className="mb-4 font-display text-lg font-bold text-foreground">Our Mission</h4>
+            <p className="text-sm text-muted-foreground">
+              To be the #1 digital gym in Kunnathur, providing innovative AI fitness solutions that deliver real results.
+            </p>
           </div>
         </div>
 
         {/* Copyright */}
         <div className="mt-12 border-t border-border/50 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 Real Fitness - Black Squad | Kunnathur. All rights reserved.
+            © 2025 Real Fitness - Kunnathur's Best AI-Powered Digital Gym. All rights reserved.
           </p>
         </div>
       </div>

@@ -2,34 +2,34 @@ import { Dumbbell, Users, Clock, QrCode, Heart, Zap } from "lucide-react";
 
 const features = [
   {
-    icon: Dumbbell,
-    title: "Premium Equipment",
-    description: "State-of-the-art machines and free weights for complete workouts",
-  },
-  {
-    icon: Users,
-    title: "Expert Trainers",
-    description: "Certified personal trainers to guide your fitness journey",
-  },
-  {
-    icon: Clock,
-    title: "Flexible Hours",
-    description: "Open early morning to late night for your convenience",
-  },
-  {
-    icon: QrCode,
-    title: "QR Attendance",
-    description: "Quick check-in with our modern QR code attendance system",
+    icon: Zap,
+    title: "AI-Powered Personal Trainer",
+    description: "Our core feature! Get daily, personalized workout plans from our AI coach, tailored to your goals.",
   },
   {
     icon: Heart,
-    title: "Health Tracking",
-    description: "Monitor your progress with our integrated health tracking",
+    title: "Digital Progress Tracking",
+    description: "Monitor your gains, weight, and performance with our integrated digital tracking system.",
   },
   {
-    icon: Zap,
-    title: "High Energy",
-    description: "Motivating atmosphere with pumping music and energy",
+    icon: Dumbbell,
+    title: "Premium Equipment",
+    description: "State-of-the-art machines and free weights for the best workout in Kunnathur.",
+  },
+  {
+    icon: QrCode,
+    title: "Seamless Digital Check-in",
+    description: "Quick and easy QR code entry, making your gym access effortless and modern.",
+  },
+  {
+    icon: Users,
+    title: "Kunnathur's #1 Fitness Community",
+    description: "Join a motivating community at the best gym in Kunnathur, both online and offline.",
+  },
+  {
+    icon: Clock,
+    title: "Flexible Hours for Kunnathur",
+    description: "Open early mornings and late nights to fit the busiest schedules.",
   },
 ];
 
@@ -46,10 +46,10 @@ const FeaturesSection = () => {
         {/* Section Header */}
         <div className="mb-16 text-center">
           <h2 className="font-display text-4xl font-bold uppercase text-foreground md:text-5xl">
-            Why Choose <span className="text-primary">Us</span>
+            The Future of Fitness at <span className="text-primary">Kunnathur's Best Gym</span>
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Experience the difference at Real Fitness
+            Discover the advantages of our AI-Powered Digital Gym experience.
           </p>
         </div>
 
