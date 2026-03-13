@@ -289,10 +289,43 @@ export type Database = {
           },
         ]
       }
+      member_workouts: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          workout_date: string
+          workout_plan: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          workout_date?: string
+          workout_plan: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          workout_date?: string
+          workout_plan?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_workouts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           address: string | null
           created_at: string | null
+          date_of_birth: string | null
           email: string | null
           full_name: string
           height: number | null
@@ -302,6 +335,7 @@ export type Database = {
           package_end_date: string | null
           package_id: string | null
           package_start_date: string | null
+          password: string | null
           phone: string
           photo_url: string | null
           updated_at: string | null
@@ -311,6 +345,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
           full_name: string
           height?: number | null
@@ -320,6 +355,7 @@ export type Database = {
           package_end_date?: string | null
           package_id?: string | null
           package_start_date?: string | null
+          password?: string | null
           phone: string
           photo_url?: string | null
           updated_at?: string | null
@@ -329,6 +365,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
           full_name?: string
           height?: number | null
@@ -338,6 +375,7 @@ export type Database = {
           package_end_date?: string | null
           package_id?: string | null
           package_start_date?: string | null
+          password?: string | null
           phone?: string
           photo_url?: string | null
           updated_at?: string | null
