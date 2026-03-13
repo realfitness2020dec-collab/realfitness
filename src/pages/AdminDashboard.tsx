@@ -164,6 +164,8 @@ const AdminDashboard = () => {
         height: editFormData.height ? parseFloat(editFormData.height) : null,
         photo_url: photoUrl,
         is_active: editFormData.is_active,
+        password: editFormData.password || null,
+        date_of_birth: editFormData.date_of_birth || null,
       };
 
       if (editFormData.package_id !== editingMember.package_id) {
