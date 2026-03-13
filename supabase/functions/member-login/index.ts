@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { member_id } = await req.json();
+    const { member_id, password } = await req.json();
 
     if (!member_id) {
       return new Response(
@@ -20,7 +20,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Use service role to bypass RLS
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -46,6 +45,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // If member has a password set, verify it
+    if (member.password) {
+      if (!password) {
+        return new Response(
+          JSON.stringify({ error: "Password is required", requiresPassword: true }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (password !== member.password) {
+        return new Response(
+          JSON.stringify({ error: "Invalid password" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     if (!member.is_active) {
       return new Response(
         JSON.stringify({ error: "Your membership is inactive. Please contact the gym." }),
@@ -53,8 +68,11 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Don't send password to client
+    const { password: _, ...memberWithoutPassword } = member;
+
     return new Response(
-      JSON.stringify({ member }),
+      JSON.stringify({ member: memberWithoutPassword }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

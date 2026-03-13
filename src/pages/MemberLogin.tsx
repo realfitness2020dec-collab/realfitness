@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, ArrowLeft } from "lucide-react";
+import { User, ArrowLeft, Lock } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 
 const MemberLogin = () => {
   const navigate = useNavigate();
   const [memberId, setMemberId] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -19,30 +21,33 @@ const MemberLogin = () => {
     setLoading(true);
 
     try {
-      // Clear any stale auth session to prevent refresh token loops
+      // Clear any stale auth session
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData?.session) {
-        // Check if session is actually valid by trying a simple operation
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
-          // Stale session - clear it so it doesn't block requests
           await supabase.auth.signOut({ scope: 'local' });
         }
       }
 
       const { data, error } = await supabase.functions.invoke("member-login", {
-        body: { member_id: memberId },
+        body: { member_id: memberId, password: password || undefined },
       });
 
       if (error || data?.error) {
+        if (data?.requiresPassword && !showPassword) {
+          setShowPassword(true);
+          toast.info("This account requires a password");
+          setLoading(false);
+          return;
+        }
         toast.error(data?.error || "Member ID not found. Please check and try again.");
         return;
       }
 
       const member = data.member;
-
-      // Store member info in session storage for member portal
-      sessionStorage.setItem("member", JSON.stringify(member));
+      // Use localStorage for persistence across refreshes (fixes iPhone issue)
+      localStorage.setItem("member", JSON.stringify(member));
       toast.success(`Welcome back, ${member.full_name}!`);
       navigate("/member/portal");
     } catch (error: unknown) {
@@ -56,7 +61,6 @@ const MemberLogin = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
-        {/* Back Button */}
         <Button
           variant="ghost"
           onClick={() => navigate("/")}
@@ -66,7 +70,6 @@ const MemberLogin = () => {
           Back to Home
         </Button>
 
-        {/* Logo */}
         <div className="flex justify-center">
           <img 
             src={realFitnessLogo} 
@@ -75,7 +78,6 @@ const MemberLogin = () => {
           />
         </div>
 
-        {/* Login Card */}
         <Card className="bg-card border-border animate-scale-in">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-foreground font-[family-name:var(--font-display)]">
@@ -99,6 +101,24 @@ const MemberLogin = () => {
                   />
                 </div>
               </div>
+
+              {showPassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-foreground">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 bg-background border-border text-foreground"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               <Button
                 type="submit"

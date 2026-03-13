@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3, AlertTriangle, Camera, Database, FileText } from "lucide-react";
+import { Users, UserPlus, LogOut, Package, Calendar, Pencil, Trash2, Home, QrCode, BarChart3, AlertTriangle, Camera, Database, FileText, Cake, Dumbbell } from "lucide-react";
 import realFitnessLogo from "@/assets/real-fitness-logo.png";
 import AttendanceAnalytics from "@/components/AttendanceAnalytics";
 import PackageManagement from "@/components/PackageManagement";
@@ -22,7 +22,8 @@ import ExpiryNotifications from "@/components/ExpiryNotifications";
 import TransformationPhotos from "@/components/TransformationPhotos";
 import BlogManagement from "@/components/BlogManagement";
 import RemainingDaysEditor from "@/components/RemainingDaysEditor";
-
+import BirthdayNotifications from "@/components/BirthdayNotifications";
+import MemberWorkoutAssignment from "@/components/MemberWorkoutAssignment";
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -38,11 +39,11 @@ const AdminDashboard = () => {
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
-    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "",
+    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", password: "", date_of_birth: "",
   });
 
   const [editFormData, setEditFormData] = useState({
-    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", is_active: true,
+    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", is_active: true, password: "", date_of_birth: "",
   });
 
   useEffect(() => {
@@ -114,10 +115,12 @@ const AdminDashboard = () => {
         photo_url: photoUrl,
         is_active: true,
         user_id: null,
+        password: formData.password || null,
+        date_of_birth: formData.date_of_birth || null,
       });
 
       toast.success(`Member created! ID: ${memberId}`);
-      setFormData({ full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "" });
+      setFormData({ full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", password: "", date_of_birth: "" });
       setPhotoFile(null); setPhotoPreview(null); setShowAddMember(false); fetchMembers();
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to create member");
@@ -135,6 +138,8 @@ const AdminDashboard = () => {
       height: member.height?.toString() || "",
       package_id: member.package_id || "",
       is_active: member.is_active ?? true,
+      password: member.password || "",
+      date_of_birth: member.date_of_birth || "",
     });
     setEditPhotoPreview(member.photo_url);
     setEditPhotoFile(null);
@@ -160,6 +165,8 @@ const AdminDashboard = () => {
         height: editFormData.height ? parseFloat(editFormData.height) : null,
         photo_url: photoUrl,
         is_active: editFormData.is_active,
+        password: editFormData.password || null,
+        date_of_birth: editFormData.date_of_birth || null,
       };
 
       if (editFormData.package_id !== editingMember.package_id) {
@@ -229,28 +236,36 @@ const AdminDashboard = () => {
         <div className="flex justify-center mb-8"><img src={realFitnessLogo} alt="Real Fitness Logo" className="h-48 w-48 object-contain" /></div>
         
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 max-w-4xl mx-auto">
-            <TabsTrigger value="members" className="gap-2">
+          <TabsList className="grid w-full grid-cols-8 max-w-5xl mx-auto">
+            <TabsTrigger value="members" className="gap-1 text-xs">
               <Users className="h-4 w-4" />
               Members
             </TabsTrigger>
-            <TabsTrigger value="packages" className="gap-2">
+            <TabsTrigger value="packages" className="gap-1 text-xs">
               <Package className="h-4 w-4" />
               Packages
             </TabsTrigger>
-            <TabsTrigger value="blog" className="gap-2">
+            <TabsTrigger value="workouts" className="gap-1 text-xs">
+              <Dumbbell className="h-4 w-4" />
+              Workouts
+            </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-1 text-xs">
               <FileText className="h-4 w-4" />
               Blog
             </TabsTrigger>
-            <TabsTrigger value="transformations" className="gap-2">
+            <TabsTrigger value="transformations" className="gap-1 text-xs">
               <Camera className="h-4 w-4" />
               Progress
             </TabsTrigger>
-            <TabsTrigger value="expiry" className="gap-2">
+            <TabsTrigger value="expiry" className="gap-1 text-xs">
               <AlertTriangle className="h-4 w-4" />
               Expiry
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
+            <TabsTrigger value="birthdays" className="gap-1 text-xs">
+              <Cake className="h-4 w-4" />
+              Birthdays
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1 text-xs">
               <BarChart3 className="h-4 w-4" />
               Reports
             </TabsTrigger>
@@ -283,6 +298,8 @@ const AdminDashboard = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2"><Label className="text-foreground">Full Name *</Label><Input value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} required className="bg-background border-border text-foreground" /></div>
                     <div className="space-y-2"><Label className="text-foreground">Phone *</Label><Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} required className="bg-background border-border text-foreground" /></div>
+                    <div className="space-y-2"><Label className="text-foreground">Date of Birth</Label><Input type="date" value={formData.date_of_birth} onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})} className="bg-background border-border text-foreground" /></div>
+                    <div className="space-y-2"><Label className="text-foreground">Password</Label><Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} placeholder="Set login password" className="bg-background border-border text-foreground" /></div>
                     <div className="space-y-2"><Label className="text-foreground">Email</Label><Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-background border-border text-foreground" /></div>
                     <div className="space-y-2"><Label className="text-foreground">Package</Label><Select value={formData.package_id} onValueChange={(v) => setFormData({...formData, package_id: v})}><SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Choose package" /></SelectTrigger><SelectContent className="bg-popover border-border">{packages.map((pkg) => <SelectItem key={pkg.id} value={pkg.id}>{pkg.name} - ₹{pkg.price}</SelectItem>)}</SelectContent></Select></div>
                     <div className="space-y-2"><Label className="text-foreground">Weight (kg)</Label><Input type="number" value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} className="bg-background border-border text-foreground" /></div>
@@ -329,6 +346,8 @@ const AdminDashboard = () => {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2"><Label className="text-foreground">Full Name *</Label><Input value={editFormData.full_name} onChange={(e) => setEditFormData({...editFormData, full_name: e.target.value})} required className="bg-background border-border text-foreground" /></div>
                                 <div className="space-y-2"><Label className="text-foreground">Phone *</Label><Input value={editFormData.phone} onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})} required className="bg-background border-border text-foreground" /></div>
+                                <div className="space-y-2"><Label className="text-foreground">Date of Birth</Label><Input type="date" value={editFormData.date_of_birth} onChange={(e) => setEditFormData({...editFormData, date_of_birth: e.target.value})} className="bg-background border-border text-foreground" /></div>
+                                <div className="space-y-2"><Label className="text-foreground">Password</Label><Input value={editFormData.password} onChange={(e) => setEditFormData({...editFormData, password: e.target.value})} placeholder="Set login password" className="bg-background border-border text-foreground" /></div>
                                 <div className="space-y-2"><Label className="text-foreground">Email</Label><Input type="email" value={editFormData.email} onChange={(e) => setEditFormData({...editFormData, email: e.target.value})} className="bg-background border-border text-foreground" /></div>
                                 <div className="space-y-2"><Label className="text-foreground">Package</Label><Select value={editFormData.package_id} onValueChange={(v) => setEditFormData({...editFormData, package_id: v})}><SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Choose package" /></SelectTrigger><SelectContent className="bg-popover border-border">{packages.map((pkg) => <SelectItem key={pkg.id} value={pkg.id}>{pkg.name} - ₹{pkg.price}</SelectItem>)}</SelectContent></Select></div>
                                 <div className="space-y-2"><Label className="text-foreground">Weight (kg)</Label><Input type="number" value={editFormData.weight} onChange={(e) => setEditFormData({...editFormData, weight: e.target.value})} className="bg-background border-border text-foreground" /></div>
@@ -359,6 +378,10 @@ const AdminDashboard = () => {
             <PackageManagement />
           </TabsContent>
 
+          <TabsContent value="workouts">
+            <MemberWorkoutAssignment members={members} />
+          </TabsContent>
+
           <TabsContent value="blog">
             <BlogManagement />
           </TabsContent>
@@ -369,6 +392,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="expiry">
             <ExpiryNotifications />
+          </TabsContent>
+
+          <TabsContent value="birthdays">
+            <BirthdayNotifications />
           </TabsContent>
 
           <TabsContent value="analytics">
