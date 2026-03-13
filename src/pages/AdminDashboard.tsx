@@ -236,28 +236,36 @@ const AdminDashboard = () => {
         <div className="flex justify-center mb-8"><img src={realFitnessLogo} alt="Real Fitness Logo" className="h-48 w-48 object-contain" /></div>
         
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 max-w-4xl mx-auto">
-            <TabsTrigger value="members" className="gap-2">
+          <TabsList className="grid w-full grid-cols-8 max-w-5xl mx-auto">
+            <TabsTrigger value="members" className="gap-1 text-xs">
               <Users className="h-4 w-4" />
               Members
             </TabsTrigger>
-            <TabsTrigger value="packages" className="gap-2">
+            <TabsTrigger value="packages" className="gap-1 text-xs">
               <Package className="h-4 w-4" />
               Packages
             </TabsTrigger>
-            <TabsTrigger value="blog" className="gap-2">
+            <TabsTrigger value="workouts" className="gap-1 text-xs">
+              <Dumbbell className="h-4 w-4" />
+              Workouts
+            </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-1 text-xs">
               <FileText className="h-4 w-4" />
               Blog
             </TabsTrigger>
-            <TabsTrigger value="transformations" className="gap-2">
+            <TabsTrigger value="transformations" className="gap-1 text-xs">
               <Camera className="h-4 w-4" />
               Progress
             </TabsTrigger>
-            <TabsTrigger value="expiry" className="gap-2">
+            <TabsTrigger value="expiry" className="gap-1 text-xs">
               <AlertTriangle className="h-4 w-4" />
               Expiry
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
+            <TabsTrigger value="birthdays" className="gap-1 text-xs">
+              <Cake className="h-4 w-4" />
+              Birthdays
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1 text-xs">
               <BarChart3 className="h-4 w-4" />
               Reports
             </TabsTrigger>
