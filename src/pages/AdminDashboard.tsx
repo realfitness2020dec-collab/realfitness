@@ -378,6 +378,10 @@ const AdminDashboard = () => {
             <PackageManagement />
           </TabsContent>
 
+          <TabsContent value="workouts">
+            <MemberWorkoutAssignment members={members} />
+          </TabsContent>
+
           <TabsContent value="blog">
             <BlogManagement />
           </TabsContent>
@@ -388,6 +392,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="expiry">
             <ExpiryNotifications />
+          </TabsContent>
+
+          <TabsContent value="birthdays">
+            <BirthdayNotifications />
           </TabsContent>
 
           <TabsContent value="analytics">
