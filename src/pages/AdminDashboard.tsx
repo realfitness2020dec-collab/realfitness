@@ -119,7 +119,7 @@ const AdminDashboard = () => {
       });
 
       toast.success(`Member created! ID: ${memberId}`);
-      setFormData({ full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "" });
+      setFormData({ full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", password: "", date_of_birth: "" });
       setPhotoFile(null); setPhotoPreview(null); setShowAddMember(false); fetchMembers();
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to create member");
