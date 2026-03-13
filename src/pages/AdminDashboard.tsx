@@ -38,11 +38,11 @@ const AdminDashboard = () => {
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
-    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "",
+    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", password: "", date_of_birth: "",
   });
 
   const [editFormData, setEditFormData] = useState({
-    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", is_active: true,
+    full_name: "", phone: "", email: "", address: "", weight: "", height: "", package_id: "", is_active: true, password: "", date_of_birth: "",
   });
 
   useEffect(() => {
