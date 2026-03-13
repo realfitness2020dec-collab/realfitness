@@ -114,6 +114,8 @@ const AdminDashboard = () => {
         photo_url: photoUrl,
         is_active: true,
         user_id: null,
+        password: formData.password || null,
+        date_of_birth: formData.date_of_birth || null,
       });
 
       toast.success(`Member created! ID: ${memberId}`);
