@@ -137,6 +137,8 @@ const AdminDashboard = () => {
       height: member.height?.toString() || "",
       package_id: member.package_id || "",
       is_active: member.is_active ?? true,
+      password: member.password || "",
+      date_of_birth: member.date_of_birth || "",
     });
     setEditPhotoPreview(member.photo_url);
     setEditPhotoFile(null);
