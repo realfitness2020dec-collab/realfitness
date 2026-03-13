@@ -22,7 +22,8 @@ import ExpiryNotifications from "@/components/ExpiryNotifications";
 import TransformationPhotos from "@/components/TransformationPhotos";
 import BlogManagement from "@/components/BlogManagement";
 import RemainingDaysEditor from "@/components/RemainingDaysEditor";
-
+import BirthdayNotifications from "@/components/BirthdayNotifications";
+import MemberWorkoutAssignment from "@/components/MemberWorkoutAssignment";
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
