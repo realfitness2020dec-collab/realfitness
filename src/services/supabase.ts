@@ -16,9 +16,19 @@ export interface Member {
   photo_url: string | null;
   is_active: boolean | null;
   user_id: string | null;
+  password: string | null;
+  date_of_birth: string | null;
   created_at: string | null;
   updated_at: string | null;
   gym_packages?: GymPackage | null;
+}
+
+export interface MemberWorkout {
+  id: string;
+  member_id: string;
+  workout_date: string;
+  workout_plan: string;
+  created_at: string;
 }
 
 export interface GymPackage {
