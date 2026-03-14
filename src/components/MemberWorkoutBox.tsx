@@ -17,15 +17,38 @@ const MemberWorkoutBox = ({ memberId }: MemberWorkoutBoxProps) => {
   }, [memberId]);
 
   const fetchWorkouts = async () => {
+    if (!memberId) {
+      setWorkouts([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("member-workouts", {
         body: { member_id: memberId, limit: 7 },
       });
-      if (!error && data?.workouts) {
+
+      if (!error && Array.isArray(data?.workouts)) {
         setWorkouts(data.workouts);
+        return;
       }
+
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("member_workouts")
+        .select("*")
+        .eq("member_id", memberId)
+        .order("workout_date", { ascending: false })
+        .limit(7);
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+
+      setWorkouts((fallbackData as MemberWorkout[]) || []);
     } catch (e) {
       console.error("Failed to fetch workouts", e);
+      setWorkouts([]);
     } finally {
       setLoading(false);
     }
