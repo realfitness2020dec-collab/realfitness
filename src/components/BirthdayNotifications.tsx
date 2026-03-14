@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Cake, Phone, Send, CheckCircle2, Loader2 } from "lucide-react";
-import { format, isToday, differenceInDays, setYear } from "date-fns";
+import { Cake, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { format, differenceInDays, setYear, startOfDay } from "date-fns";
 import { toast } from "sonner";
 
 interface BirthdayMember {
@@ -16,6 +16,27 @@ interface BirthdayMember {
   notificationSent?: boolean;
 }
 
+const normalizeIndianPhoneForWhatsApp = (phone: string): string | null => {
+  const digitsOnly = phone.replace(/\D/g, "");
+  if (!digitsOnly) return null;
+
+  const withoutLeadingZeros = digitsOnly.replace(/^0+/, "");
+
+  if (withoutLeadingZeros.length === 10) {
+    return `91${withoutLeadingZeros}`;
+  }
+
+  if (withoutLeadingZeros.length === 12 && withoutLeadingZeros.startsWith("91")) {
+    return withoutLeadingZeros;
+  }
+
+  if (withoutLeadingZeros.length > 10) {
+    return withoutLeadingZeros;
+  }
+
+  return null;
+};
+
 const BirthdayNotifications = () => {
   const [birthdayMembers, setBirthdayMembers] = useState<BirthdayMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +45,15 @@ const BirthdayNotifications = () => {
   useEffect(() => {
     fetchBirthdayMembers();
   }, []);
+
+  const getNextBirthdayDate = (dob: string) => {
+    const today = startOfDay(new Date());
+    const currentYearBirthday = startOfDay(setYear(new Date(dob), today.getFullYear()));
+    if (currentYearBirthday >= today) {
+      return currentYearBirthday;
+    }
+    return startOfDay(setYear(new Date(dob), today.getFullYear() + 1));
+  };
 
   const fetchBirthdayMembers = async () => {
     try {
@@ -38,22 +68,18 @@ const BirthdayNotifications = () => {
         return;
       }
 
-      const today = new Date();
-      const currentYear = today.getFullYear();
+      const today = startOfDay(new Date());
 
-      // Filter members whose birthday is today or within next 7 days
       const upcoming = data
         .filter((m) => {
           if (!m.date_of_birth) return false;
-          const dob = new Date(m.date_of_birth);
-          const birthdayThisYear = setYear(dob, currentYear);
-          const diff = differenceInDays(birthdayThisYear, today);
+          const diff = differenceInDays(getNextBirthdayDate(m.date_of_birth), today);
           return diff >= 0 && diff <= 7;
         })
         .sort((a, b) => {
-          const dobA = setYear(new Date(a.date_of_birth!), currentYear);
-          const dobB = setYear(new Date(b.date_of_birth!), currentYear);
-          return dobA.getTime() - dobB.getTime();
+          const dateA = getNextBirthdayDate(a.date_of_birth!);
+          const dateB = getNextBirthdayDate(b.date_of_birth!);
+          return dateA.getTime() - dateB.getTime();
         }) as BirthdayMember[];
 
       setBirthdayMembers(upcoming);
@@ -65,9 +91,8 @@ const BirthdayNotifications = () => {
   };
 
   const getDaysUntilBirthday = (dob: string) => {
-    const today = new Date();
-    const birthday = setYear(new Date(dob), today.getFullYear());
-    return differenceInDays(birthday, today);
+    const today = startOfDay(new Date());
+    return differenceInDays(getNextBirthdayDate(dob), today);
   };
 
   const isBirthdayToday = (dob: string) => {
@@ -79,14 +104,19 @@ const BirthdayNotifications = () => {
   const sendBirthdayWish = async (member: BirthdayMember) => {
     setSendingTo(member.id);
     try {
+      const normalizedPhone = normalizeIndianPhoneForWhatsApp(member.phone);
+      if (!normalizedPhone) {
+        toast.error(`Invalid phone number for ${member.full_name}. Add valid mobile number with country code.`);
+        return;
+      }
+
       const message = `🎂🎉 Happy Birthday, ${member.full_name}! 🎉🎂\n\nWishing you a fantastic birthday from all of us at Real Fitness! 💪🏋️\n\nMay this year bring you great health, strength, and success in your fitness journey!\n\n🎁 Come celebrate with a special birthday workout today!\n\n- Team Real Fitness, Kunnathur`;
-      
-      const phone = member.phone.replace(/\s+/g, "").replace(/^0/, "91");
-      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, "_blank");
-      
-      setBirthdayMembers(prev =>
-        prev.map(m => m.id === member.id ? { ...m, notificationSent: true } : m)
+
+      const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+
+      setBirthdayMembers((prev) =>
+        prev.map((m) => (m.id === member.id ? { ...m, notificationSent: true } : m))
       );
       toast.success(`Birthday wish opened for ${member.full_name}`);
     } catch {
@@ -110,7 +140,7 @@ const BirthdayNotifications = () => {
     <Card className="bg-card border-border">
       <CardHeader>
         <CardTitle className="text-foreground flex items-center gap-2">
-          <Cake className="h-5 w-5 text-pink-500" />
+          <Cake className="h-5 w-5 text-primary" />
           Upcoming Birthdays (Next 7 Days)
         </CardTitle>
       </CardHeader>
@@ -130,8 +160,8 @@ const BirthdayNotifications = () => {
                   key={member.id}
                   className={`p-4 rounded-lg border ${
                     todayBirthday
-                      ? "bg-pink-500/20 text-pink-400 border-pink-500/50"
-                      : "bg-purple-500/10 text-purple-400 border-purple-500/30"
+                      ? "bg-primary/15 text-foreground border-primary/40"
+                      : "bg-muted/50 text-foreground border-border"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -146,16 +176,12 @@ const BirthdayNotifications = () => {
                       <div>
                         <div className="font-bold">{member.full_name}</div>
                         <div className="text-sm opacity-80 font-mono">{member.member_id}</div>
-                        <div className="text-xs opacity-70">
-                          DOB: {format(new Date(member.date_of_birth), "MMM dd")}
-                        </div>
+                        <div className="text-xs opacity-70">DOB: {format(new Date(member.date_of_birth), "MMM dd")}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <div className="font-bold text-lg">
-                          {todayBirthday ? "🎂 Today!" : `${daysUntil} days`}
-                        </div>
+                        <div className="font-bold text-lg">{todayBirthday ? "🎂 Today!" : `${daysUntil} days`}</div>
                       </div>
                       <Button
                         size="sm"
@@ -167,7 +193,7 @@ const BirthdayNotifications = () => {
                         {sendingTo === member.id ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
                         ) : member.notificationSent ? (
-                          <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          <CheckCircle2 className="h-3 w-3 text-primary" />
                         ) : (
                           <Send className="h-3 w-3" />
                         )}

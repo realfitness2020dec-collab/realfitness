@@ -12,8 +12,10 @@ Deno.serve(async (req) => {
 
   try {
     const { member_id, password } = await req.json();
+    const normalizedMemberId = String(member_id || "").trim().toUpperCase();
+    const normalizedPassword = typeof password === "string" ? password.trim() : "";
 
-    if (!member_id) {
+    if (!normalizedMemberId) {
       return new Response(
         JSON.stringify({ error: "Member ID is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -28,7 +30,7 @@ Deno.serve(async (req) => {
     const { data: member, error } = await supabase
       .from("members")
       .select("*, gym_packages(*)")
-      .eq("member_id", member_id.toUpperCase())
+      .eq("member_id", normalizedMemberId)
       .maybeSingle();
 
     if (error) {
@@ -45,15 +47,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // If member has a password set, verify it
-    if (member.password) {
-      if (!password) {
+    const storedPassword = typeof member.password === "string" ? member.password.trim() : "";
+
+    if (storedPassword) {
+      if (!normalizedPassword) {
         return new Response(
           JSON.stringify({ error: "Password is required", requiresPassword: true }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (password !== member.password) {
+
+      if (normalizedPassword !== storedPassword) {
         return new Response(
           JSON.stringify({ error: "Invalid password" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -68,14 +72,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Don't send password to client
-    const { password: _, ...memberWithoutPassword } = member;
+    const { password: _password, ...memberWithoutPassword } = member;
 
     return new Response(
       JSON.stringify({ member: memberWithoutPassword }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch {
     return new Response(
       JSON.stringify({ error: "Invalid request" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
