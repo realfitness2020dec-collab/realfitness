@@ -13,7 +13,6 @@ const MemberLogin = () => {
   const navigate = useNavigate();
   const [memberId, setMemberId] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -21,38 +20,35 @@ const MemberLogin = () => {
     setLoading(true);
 
     try {
-      // Clear any stale auth session
+      const normalizedMemberId = memberId.trim().toUpperCase();
+      const normalizedPassword = password.trim();
+
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData?.session) {
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
-          await supabase.auth.signOut({ scope: 'local' });
+          await supabase.auth.signOut({ scope: "local" });
         }
       }
 
       const { data, error } = await supabase.functions.invoke("member-login", {
-        body: { member_id: memberId, password: password || undefined },
+        body: {
+          member_id: normalizedMemberId,
+          password: normalizedPassword || undefined,
+        },
       });
 
       if (error || data?.error) {
-        if (data?.requiresPassword && !showPassword) {
-          setShowPassword(true);
-          toast.info("This account requires a password");
-          setLoading(false);
-          return;
-        }
-        toast.error(data?.error || "Member ID not found. Please check and try again.");
+        toast.error(data?.error || "Login failed. Please check Member ID and password.");
         return;
       }
 
       const member = data.member;
-      // Use localStorage for persistence across refreshes (fixes iPhone issue)
       localStorage.setItem("member", JSON.stringify(member));
       toast.success(`Welcome back, ${member.full_name}!`);
       navigate("/member/portal");
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Login failed";
-      toast.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -71,11 +67,7 @@ const MemberLogin = () => {
         </Button>
 
         <div className="flex justify-center">
-          <img 
-            src={realFitnessLogo} 
-            alt="Real Fitness" 
-            className="h-40 w-40 object-contain animate-bounce-in"
-          />
+          <img src={realFitnessLogo} alt="Real Fitness" className="h-40 w-40 object-contain animate-bounce-in" />
         </div>
 
         <Card className="bg-card border-border animate-scale-in">
@@ -83,7 +75,7 @@ const MemberLogin = () => {
             <CardTitle className="text-2xl font-bold text-foreground font-[family-name:var(--font-display)]">
               MEMBER LOGIN
             </CardTitle>
-            <p className="text-muted-foreground">Enter your Member ID to continue</p>
+            <p className="text-muted-foreground">Enter your Member ID and password to continue</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
@@ -102,23 +94,23 @@ const MemberLogin = () => {
                 </div>
               </div>
 
-              {showPassword && (
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-foreground">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 bg-background border-border text-foreground"
-                      required
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-foreground">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter password set by admin"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 bg-background border-border text-foreground"
+                  />
                 </div>
-              )}
+                <p className="text-xs text-muted-foreground">
+                  If admin set a password for your account, login will work only with that password.
+                </p>
+              </div>
 
               <Button
                 type="submit"
@@ -132,8 +124,7 @@ const MemberLogin = () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
-                Don't have a Member ID?{" "}
-                <span className="text-primary">Contact the gym to register</span>
+                Don't have a Member ID? <span className="text-primary">Contact the gym to register</span>
               </p>
             </div>
           </CardContent>
