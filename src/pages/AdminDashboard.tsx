@@ -379,8 +379,9 @@ const AdminDashboard = () => {
             <PackageManagement />
           </TabsContent>
 
-          <TabsContent value="workouts">
+          <TabsContent value="workouts" className="space-y-6">
             <MemberWorkoutAssignment members={members} />
+            <AdminWorkoutList members={members} />
           </TabsContent>
 
           <TabsContent value="blog">
