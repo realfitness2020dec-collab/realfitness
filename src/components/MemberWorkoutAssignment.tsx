@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dumbbell, Send, Loader2 } from "lucide-react";
+import { Dumbbell, Send, Loader2, Repeat } from "lucide-react";
 import { toast } from "sonner";
 
 interface MemberWorkoutAssignmentProps {
@@ -18,6 +18,7 @@ const MemberWorkoutAssignment = ({ members }: MemberWorkoutAssignmentProps) => {
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split("T")[0]);
   const [workoutPlan, setWorkoutPlan] = useState("");
+  const [repeatWeeks, setRepeatWeeks] = useState("1");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,21 +28,34 @@ const MemberWorkoutAssignment = ({ members }: MemberWorkoutAssignmentProps) => {
       return;
     }
 
+    const weeks = parseInt(repeatWeeks) || 1;
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("member_workouts")
-        .insert({
+      const rows = [];
+      for (let i = 0; i < weeks; i++) {
+        const date = new Date(workoutDate);
+        date.setDate(date.getDate() + i * 7);
+        rows.push({
           member_id: selectedMemberId,
-          workout_date: workoutDate,
+          workout_date: date.toISOString().split("T")[0],
           workout_plan: workoutPlan.trim(),
         });
+      }
+
+      const { error } = await supabase
+        .from("member_workouts")
+        .insert(rows);
 
       if (error) throw error;
 
       const member = members.find(m => m.id === selectedMemberId);
-      toast.success(`Workout assigned to ${member?.full_name || "member"}!`);
+      toast.success(
+        weeks > 1
+          ? `Workout assigned to ${member?.full_name || "member"} for ${weeks} weeks!`
+          : `Workout assigned to ${member?.full_name || "member"}!`
+      );
       setWorkoutPlan("");
+      setRepeatWeeks("1");
     } catch (error) {
       toast.error("Failed to assign workout");
     } finally {
@@ -59,7 +73,7 @@ const MemberWorkoutAssignment = ({ members }: MemberWorkoutAssignmentProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-foreground">Select Member *</Label>
               <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
@@ -76,13 +90,32 @@ const MemberWorkoutAssignment = ({ members }: MemberWorkoutAssignmentProps) => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-foreground">Workout Date</Label>
+              <Label className="text-foreground">Start Date</Label>
               <Input
                 type="date"
                 value={workoutDate}
                 onChange={(e) => setWorkoutDate(e.target.value)}
                 className="bg-background border-border text-foreground"
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground flex items-center gap-1">
+                <Repeat className="h-3.5 w-3.5" /> Repeat for Weeks
+              </Label>
+              <Select value={repeatWeeks} onValueChange={setRepeatWeeks}>
+                <SelectTrigger className="bg-background border-border text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value="1">1 Week (No repeat)</SelectItem>
+                  <SelectItem value="2">2 Weeks</SelectItem>
+                  <SelectItem value="3">3 Weeks</SelectItem>
+                  <SelectItem value="4">4 Weeks (1 Month)</SelectItem>
+                  <SelectItem value="6">6 Weeks</SelectItem>
+                  <SelectItem value="8">8 Weeks (2 Months)</SelectItem>
+                  <SelectItem value="12">12 Weeks (3 Months)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-2">
@@ -95,9 +128,14 @@ const MemberWorkoutAssignment = ({ members }: MemberWorkoutAssignmentProps) => {
               required
             />
           </div>
+          {parseInt(repeatWeeks) > 1 && (
+            <p className="text-xs text-muted-foreground">
+              This workout will be duplicated every week for {repeatWeeks} weeks starting from {workoutDate}.
+            </p>
+          )}
           <Button type="submit" disabled={submitting} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {submitting ? "Assigning..." : "Assign Workout"}
+            {submitting ? "Assigning..." : parseInt(repeatWeeks) > 1 ? `Assign for ${repeatWeeks} Weeks` : "Assign Workout"}
           </Button>
         </form>
       </CardContent>
