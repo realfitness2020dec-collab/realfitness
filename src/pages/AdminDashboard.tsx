@@ -24,6 +24,7 @@ import BlogManagement from "@/components/BlogManagement";
 import RemainingDaysEditor from "@/components/RemainingDaysEditor";
 import BirthdayNotifications from "@/components/BirthdayNotifications";
 import MemberWorkoutAssignment from "@/components/MemberWorkoutAssignment";
+import AdminWorkoutList from "@/components/AdminWorkoutList";
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -378,8 +379,9 @@ const AdminDashboard = () => {
             <PackageManagement />
           </TabsContent>
 
-          <TabsContent value="workouts">
+          <TabsContent value="workouts" className="space-y-6">
             <MemberWorkoutAssignment members={members} />
+            <AdminWorkoutList members={members} />
           </TabsContent>
 
           <TabsContent value="blog">
