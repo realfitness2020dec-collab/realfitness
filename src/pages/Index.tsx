@@ -4,6 +4,7 @@ import FeaturesSection from "@/components/FeaturesSection";
 import FeedbackSection from "@/components/FeedbackSection";
 import BlogSection from "@/components/BlogSection";
 import Footer from "@/components/Footer";
+import InstallPrompt from "@/components/InstallPrompt";
 
 const Index = () => {
   return (
@@ -14,6 +15,7 @@ const Index = () => {
       <FeedbackSection />
       <BlogSection />
       <Footer />
+      <InstallPrompt />
     </div>
   );
 };

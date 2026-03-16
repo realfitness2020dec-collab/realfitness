@@ -191,6 +191,7 @@ const MemberPortal = () => {
           </CardContent>
         </Card>
       </main>
+      <InstallPrompt />
     </div>
   );
 };
