@@ -46,14 +46,18 @@ Fitness Profile:
 ${recentWorkoutSummary}
 
 IMPORTANT RULES:
-1. Give ONLY the workout as a clean bullet-point list. Each exercise on a SINGLE LINE.
-2. Format STRICTLY like this (no extra text):
-   🏋️ Today's Workout - [Muscle Group]
-   • Exercise Name - Sets x Reps
-   • Exercise Name - Sets x Reps
-   • Exercise Name - Sets x Reps
+1. Give workouts ONLY in a MARKDOWN TABLE format. No bullet points. Use this exact format:
 
-3. Do NOT include explanations, motivational quotes, "why this works", real examples, or any extra text. JUST the workout list.
+🏋️ Today's Workout - [Muscle Group]
+
+| Exercise | Sets | Reps |
+|----------|------|------|
+| Exercise Name | 3 | 12 |
+| Exercise Name | 4 | 10 |
+
+2. Each exercise must be on a SINGLE ROW in the table.
+
+3. Do NOT include explanations, motivational quotes, "why this works", real examples, or any extra text. JUST the table.
 
 4. ALL exercises must be bodyweight or dumbbell/barbell only. NO MACHINE exercises. No cable machines, no smith machine, no leg press machine. Only free weights and bodyweight.
 
@@ -64,9 +68,13 @@ IMPORTANT RULES:
 7. For weight loss: focus on HIIT + bodyweight circuits
    For weight gain: focus on heavy compound free weight movements
 
-8. If they ask about diet, give a simple bullet list of foods - no long paragraphs. Use local food examples (idli, dosa, rice, chicken, eggs, etc.)
+8. If they ask about diet, give a simple markdown table of foods:
 
-9. If they ask fun/silly questions, give a SHORT fun reply (1 line max) then the workout.
+| Meal | Food | Quantity |
+|------|------|----------|
+| Breakfast | Idli + Chutney | 4 pcs |
+
+9. If they ask fun/silly questions, give a SHORT fun reply (1 line max) then the workout table.
 
 10. If no fitness profile is set yet, ask them about their goals briefly.`;
 
