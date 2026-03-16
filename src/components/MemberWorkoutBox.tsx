@@ -10,6 +10,39 @@ interface MemberWorkoutBoxProps {
   memberId: string;
 }
 
+const parseWorkoutToTable = (text: string): { exercise: string; sets: string; reps: string }[] => {
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+  const rows: { exercise: string; sets: string; reps: string }[] = [];
+
+  for (const line of lines) {
+    // Skip markdown table headers/separators
+    if (line.startsWith("|") && (line.includes("Exercise") || line.includes("---"))) continue;
+    
+    // Parse markdown table rows: | Exercise | Sets | Reps |
+    if (line.startsWith("|")) {
+      const cells = line.split("|").map(c => c.trim()).filter(Boolean);
+      if (cells.length >= 3) {
+        rows.push({ exercise: cells[0], sets: cells[1], reps: cells[2] });
+        continue;
+      }
+    }
+
+    // Parse plain text: "Exercise Name  3  10-12" or "Exercise Name 3 10-12"
+    const match = line.match(/^(.+?)\s{2,}(\d+)\s+(.+)$/);
+    if (match) {
+      rows.push({ exercise: match[1].trim(), sets: match[2], reps: match[3].trim() });
+      continue;
+    }
+
+    // Try tab-separated
+    const tabs = line.split("\t").filter(Boolean);
+    if (tabs.length >= 3) {
+      rows.push({ exercise: tabs[0].trim(), sets: tabs[1].trim(), reps: tabs[2].trim() });
+    }
+  }
+  return rows;
+};
+
 const MemberWorkoutBox = ({ memberId }: MemberWorkoutBoxProps) => {
   const [workouts, setWorkouts] = useState<MemberWorkout[]>([]);
   const [loading, setLoading] = useState(true);
