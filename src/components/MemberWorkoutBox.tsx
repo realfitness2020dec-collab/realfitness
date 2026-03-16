@@ -46,8 +46,14 @@ const parseWorkoutToTable = (text: string): { exercise: string; sets: string; re
 const MemberWorkoutBox = ({ memberId }: MemberWorkoutBoxProps) => {
   const [workouts, setWorkouts] = useState<MemberWorkout[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  });
+  const [currentMonth, setCurrentMonth] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
 
   useEffect(() => {
     fetchWorkouts();
@@ -84,7 +90,8 @@ const MemberWorkoutBox = ({ memberId }: MemberWorkoutBoxProps) => {
     return d.toDateString();
   });
 
-  const selectedDateStr = selectedDate.toISOString().split("T")[0];
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const selectedDateStr = `${selectedDate.getFullYear()}-${pad(selectedDate.getMonth() + 1)}-${pad(selectedDate.getDate())}`;
   const selectedWorkouts = workouts.filter(w => w.workout_date === selectedDateStr);
 
   return (
