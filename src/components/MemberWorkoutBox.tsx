@@ -90,7 +90,8 @@ const MemberWorkoutBox = ({ memberId }: MemberWorkoutBoxProps) => {
     return d.toDateString();
   });
 
-  const selectedDateStr = selectedDate.toISOString().split("T")[0];
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const selectedDateStr = `${selectedDate.getFullYear()}-${pad(selectedDate.getMonth() + 1)}-${pad(selectedDate.getDate())}`;
   const selectedWorkouts = workouts.filter(w => w.workout_date === selectedDateStr);
 
   return (
