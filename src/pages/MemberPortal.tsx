@@ -12,6 +12,7 @@ import DailyMotivation from "@/components/DailyMotivation";
 import AttendanceStatus from "@/components/AttendanceStatus";
 import MemberWorkoutChat from "@/components/MemberWorkoutChat";
 import MemberWorkoutBox from "@/components/MemberWorkoutBox";
+import InstallPrompt from "@/components/InstallPrompt";
 
 const MemberPortal = () => {
   const navigate = useNavigate();
@@ -190,6 +191,7 @@ const MemberPortal = () => {
           </CardContent>
         </Card>
       </main>
+      <InstallPrompt />
     </div>
   );
 };
