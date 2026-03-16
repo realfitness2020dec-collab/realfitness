@@ -105,20 +105,47 @@ const MemberWorkoutBox = ({ memberId }: MemberWorkoutBoxProps) => {
                   No workout assigned for this day.
                 </p>
               ) : (
-                <div className="space-y-3">
-                  {selectedWorkouts.map((workout) => (
-                    <div
-                      key={workout.id}
-                      className="p-4 bg-muted/50 rounded-lg border border-border"
-                    >
-                      <p className="text-foreground whitespace-pre-wrap text-sm leading-relaxed">
-                        {workout.workout_plan}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Assigned on {new Date(workout.created_at).toLocaleDateString("en-IN")}
-                      </p>
-                    </div>
-                  ))}
+                <div className="space-y-4">
+                  {selectedWorkouts.map((workout) => {
+                    const rows = parseWorkoutToTable(workout.workout_plan);
+                    return (
+                      <div key={workout.id} className="rounded-xl border border-border overflow-hidden">
+                        {rows.length > 0 ? (
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-primary/10 border-b border-border">
+                                <th className="text-left py-3 px-4 font-semibold text-primary">#</th>
+                                <th className="text-left py-3 px-4 font-semibold text-primary">Exercise</th>
+                                <th className="text-center py-3 px-4 font-semibold text-primary">Sets</th>
+                                <th className="text-center py-3 px-4 font-semibold text-primary">Reps</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rows.map((row, i) => (
+                                <tr key={i} className={`border-b border-border/50 ${i % 2 === 0 ? 'bg-muted/30' : 'bg-muted/10'} hover:bg-primary/5 transition-colors`}>
+                                  <td className="py-3 px-4 text-muted-foreground font-mono text-xs">{i + 1}</td>
+                                  <td className="py-3 px-4 text-foreground font-medium">{row.exercise}</td>
+                                  <td className="py-3 px-4 text-center text-foreground">{row.sets}</td>
+                                  <td className="py-3 px-4 text-center text-foreground">{row.reps}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <div className="p-4">
+                            <p className="text-foreground whitespace-pre-wrap text-sm leading-relaxed">
+                              {workout.workout_plan}
+                            </p>
+                          </div>
+                        )}
+                        <div className="px-4 py-2 bg-muted/20 border-t border-border/50">
+                          <p className="text-xs text-muted-foreground">
+                            Assigned on {new Date(workout.created_at).toLocaleDateString("en-IN")}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
