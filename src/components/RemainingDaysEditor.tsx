@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CalendarPlus } from "lucide-react";
+import { Calendar as CalendarIcon, CalendarPlus } from "lucide-react";
 import { membersService, type Member } from "@/services/supabase";
 import { toast } from "sonner";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface RemainingDaysEditorProps {
   member: Member;
@@ -14,61 +16,33 @@ interface RemainingDaysEditorProps {
 
 const RemainingDaysEditor = ({ member, onUpdated }: RemainingDaysEditorProps) => {
   const [open, setOpen] = useState(false);
-  const [days, setDays] = useState("");
+  const [date, setDate] = useState<Date | undefined>();
   const [submitting, setSubmitting] = useState(false);
 
   const currentRemaining = member.package_end_date
     ? Math.max(0, Math.ceil((new Date(member.package_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
 
-  const handleSetDays = async () => {
-    const numDays = parseInt(days);
-    if (isNaN(numDays) || numDays < 0) {
-      toast.error("Please enter a valid number of days");
+  const handleSetExpiryDate = async () => {
+    if (!date) {
+      toast.error("Please select a date");
       return;
     }
 
     setSubmitting(true);
     try {
-      const newEndDate = new Date();
-      newEndDate.setDate(newEndDate.getDate() + numDays);
+      const newEndDate = format(date, "yyyy-MM-dd");
 
       await membersService.update(member.id, {
-        package_end_date: newEndDate.toISOString().split("T")[0],
+        package_end_date: newEndDate,
       });
 
-      toast.success(`Updated! ${member.full_name} now has ${numDays} days remaining.`);
+      const diffTime = Math.abs(date.getTime() - new Date().getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      toast.success(`Updated! ${member.full_name} now has ${diffDays} days remaining.`);
       setOpen(false);
-      setDays("");
-      onUpdated();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleAddDays = async () => {
-    const numDays = parseInt(days);
-    if (isNaN(numDays) || numDays <= 0) {
-      toast.error("Please enter a valid number of days to add");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const baseDate = member.package_end_date
-        ? new Date(Math.max(new Date(member.package_end_date).getTime(), Date.now()))
-        : new Date();
-      baseDate.setDate(baseDate.getDate() + numDays);
-
-      await membersService.update(member.id, {
-        package_end_date: baseDate.toISOString().split("T")[0],
-      });
-
-      toast.success(`Added ${numDays} days to ${member.full_name}'s membership!`);
-      setOpen(false);
-      setDays("");
+      setDate(undefined);
       onUpdated();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to update");
@@ -78,7 +52,12 @@ const RemainingDaysEditor = ({ member, onUpdated }: RemainingDaysEditorProps) =>
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        setDate(undefined);
+      }
+    }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" title="Manage remaining days">
           <CalendarPlus className="h-4 w-4" />
@@ -103,39 +82,36 @@ const RemainingDaysEditor = ({ member, onUpdated }: RemainingDaysEditorProps) =>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-foreground">Number of Days</Label>
-            <Input
-              type="number"
-              min="0"
-              value={days}
-              onChange={(e) => setDays(e.target.value)}
-              placeholder="Enter number of days"
-              className="bg-background border-border text-foreground"
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "PPP") : <span>Pick a new expiry date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={handleAddDays}
-              disabled={submitting || !days}
-              className="flex-1"
-              variant="outline"
-            >
-              ➕ Add Days
-            </Button>
-            <Button
-              onClick={handleSetDays}
-              disabled={submitting || !days}
-              className="flex-1"
-            >
-              📅 Set Total Days
-            </Button>
-          </div>
-
-          <p className="text-xs text-muted-foreground text-center">
-            "Add Days" extends from current expiry. "Set Total Days" resets from today.
-          </p>
+          <Button
+            onClick={handleSetExpiryDate}
+            disabled={submitting || !date}
+            className="w-full"
+          >
+            📅 Set Expiry Date
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
